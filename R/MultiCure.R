@@ -1,7 +1,7 @@
 
 
 devtools::use_package("survival")
-# devtools::use_package("MASS")
+devtools::use_package("MASS")
 # devtools::use_package("nnet")
 devtools::use_package("reshape2")
 devtools::use_package("cubature")
@@ -30,7 +30,7 @@ devtools::use_package("shiny")
 #' \item delta_R, the recurrence event/censoring indicator
 #'\item Y_D, the death event/censoring time 
 #' \item delta_D, the death event/censoring indicator
-#' \item G, the cure status variable. This takes value 1 for known non-cured, 0 for "known" cured and NA for unknown cure status
+#' \item G, the cure status variable. This takes value 1 for known non-cured, 0 for "known" cured and NA for unknown cur`e status
 #'}
 #' @param Cov A data frame containing the covariates used in the model fit. The columns must be named. Factors must be represented as dummy variables. 
 #' @param trace This variable indicates whether the parameter estimates at each iteration are to be saved and, if imputation is needed, whether the imputed datasets are output
@@ -44,7 +44,7 @@ devtools::use_package("shiny")
 #' @param TransCov a list with elements: Trans13, Trans24, Trans14, Trans34, PNonCure. Each list element is a vector containing the names of the variables in Cov to be used in the model for the corresponding transition. 13 is NonCured -> Recurrence, 24 is Cured -> Death, 14 is NonCured -> Death, 34 is Recurrence -> Death. PNonCure contains the names of the covariates for the logistic regression for P(NonCure). 
 #' @param IMPNUM number of imputed datasets. This is only used when covariates and/or outcome values are being imputed. 
 #' @param BASELINE This variable indicates the assumptions about the baseline hazard form. This can take values 'weib' and 'cox'
-#' @param PENALTY This variable indicates whether we are using any variable selection in the model fitting. The current code has been implemented and tested for option 'None' (no variable selection). Additional options include 'Ridge' (ridge regression for all covariates in all models) and 'Lasso' (lasso for all covariates in all models, only implemented for Cox baseline hazards), but these two options have not been rigorously tested.
+#' @param PENALTY This variable indicates whether we are using any variable selection in the model fitting. The current code has been implemented and tested for option 'None' (no variable selection). Additional options include 'Ridge' (ridge regression for all covariates in all models) and 'Lasso' (lasso for all covariates in all models, only implemented for Cox baseline hazards), but these two additional options have not been rigorously tested.
 #' @param PARAMINIT If desired, this can be a vector with initializations for the model parameters. The ordering of these parameters is c(beta, alpha, scale, shape) using the same ordering as in the output
 #' @param ImputeDat This argument is used in variance estimation for the MCEM algorithm. It provides an initialization for the imputed data. This argument can be ignored during routine EM and MCEM model fits.
 #' @param UNEQUALCENSIMPUTE This is a function for imputing the outcome data in the unequal censoring (follow-up) setting. This only needs to be specified when we have unequal censoring. Several default options are included in this package, but this could also be a user-specified function. Inputs and outputs must match default versions.
@@ -67,8 +67,14 @@ devtools::use_package("shiny")
 #'}
 #' @details In order to fit a model with no covariates for one or more of the transitions or the logistic regression, include an all-zero covariate in Cov and list that covariate for the corresponding transition/s in TransCov. 
 #'
-#' In order to include recurrence time in the model for recurrence -> death, include covariate 'T_R' (initialized to equal the observed recurrence event/censoring time) in both Cov and Trans34 (in TransCov). If performing imputation for unequal follow-up, user must specify COVIMPUTEINITIALIZE and COVIMPUTEFUNCTION to update the values of 'T_R' based on the imputed outcome values. 
-#' @author Lauren J Beesley, \email{lbeesley@umich.edu}
+#' In order to include recurrence time in the model for recurrence -> death, include covariate 'T_R' (initialized to equal the observed recurrence event/censoring time) in both Cov and Trans34 (in TransCov). If performing imputation for unequal follow-up, user must specify COVIMPUTEINITIALIZE and COVIMPUTEFUNCTION to update the values of 'T_R' based on the imputed outcome values.
+#' @examples
+#' attach(SimulateMultiCure(type = "NoMissingness"))
+#' Cov = data.frame(X1,X2)
+#' VARS = names(Cov)
+#' TransCov = list(Trans13 = VARS, Trans24 = VARS, Trans14 = VARS, Trans34 = VARS, PNonCure = VARS)
+#' datWIDE = data.frame( Y_R, Y_D, delta_R , delta_D, G)
+#' fit = MultiCure(iternum = 100, datWIDE, Cov, ASSUME = "SameHazard", TransCov = TransCov, BASELINE = "weib") 
 #' @export
 
 
@@ -78,7 +84,7 @@ MultiCure = function(iternum, datWIDE, Cov, COVIMPUTEFUNCTION = NULL,  COVIMPUTE
 	###########################
 	### Checking Arguments ####
 	###########################
-
+	Nobs = length(datWIDE[,1])
 	if(is.null(TransCov) | is.null(Cov)){stop('TransCov and Cov must be specified. To fit a model without covariates, include all-zero covariate in the model for each transition')}
 	ASSUME = match.arg(ASSUME, choices = c('SameHazard', 'AllSeparate', 'SameBaseHaz', 'ProportionalHazard'))
 	BASELINE = match.arg(BASELINE, choices = c('weib','cox'))
@@ -95,15 +101,13 @@ MultiCure = function(iternum, datWIDE, Cov, COVIMPUTEFUNCTION = NULL,  COVIMPUTE
 		TransCov$Trans14 = c(TransCov$Trans14, 'INT')
 	}
 	if(PENALTY == 'Lasso' & BASELINE == 'weib'){stop('Lasso penalization not yet implemented for Weibull baselines')}	
-	#if(!NEEDTOIMPUTE & (!is.null(ImputeDat) | !is.null(IMPNUM) )){warning('Imputation-Related Arguments Ignored')}
 	if(NEEDTOIMPUTE & is.null(IMPNUM)){stop('Specify Number of Imputations')}
 	if(sum(UnequalCens) != 0 & is.null(UNEQUALCENSIMPUTE)){
 		if(BASELINE == 'weib' & 'T_R' %in% TransCov$Trans34){
-			UNEQUALCENSIMPUTE = UNEQUALCENSIMPUTEWEIB
+			UNEQUALCENSIMPUTE = UNEQUALCENSIMPUTEWEIBINVERSION
 		}else if(BASELINE == 'weib' & !('T_R' %in% TransCov$Trans34)){
-			UNEQUALCENSIMPUTE = UNEQUALCENSIMPUTEWEIB_TR
-		}else{UNEQUALCENSIMPUTE = UNEQUALCENSIMPUTECOXMH}
-	
+			UNEQUALCENSIMPUTE = UNEQUALCENSIMPUTEWEIBREJECTION
+		}else{UNEQUALCENSIMPUTE = UNEQUALCENSIMPUTECOXMH}	
 	}
 	if((sum(CovMissing) != 0 | 'T_R' %in% TransCov$Trans34) & (is.null(COVIMPUTEFUNCTION) | is.null(COVIMPUTEINITIALIZE))){stop('Must Specify Covariate Initialization and Imputation Functions. Note: When "T_R" is in TransCov$Trans34 and we have unequal follow-up, these functions are used to update the values of T_R.')	}	
 	
@@ -165,7 +169,7 @@ MultiCure = function(iternum, datWIDE, Cov, COVIMPUTEFUNCTION = NULL,  COVIMPUTE
 	
 	
 	###########################################
-	### Multistate Cure with No Missingness ### (Including G)
+	### Multistate Cure with No Missingness ### (This includes no missingness in G. This is used to fit the multistate cure model to complate data)
 	###########################################
 
 	if(!NEEDTOIMPUTE & sum(is.na(datWIDE$G))==0){ #NO ITERATION REQUIRED

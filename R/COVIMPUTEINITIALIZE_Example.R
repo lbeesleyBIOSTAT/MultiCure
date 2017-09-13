@@ -6,13 +6,11 @@
 #'
 #' @return Cov a initialized version of the covariate matrix
 #' @details The example code included in the package initializes missing covariate X2 in the Multistate cure model example
-#' @author Lauren J Beesley, \email{lbeesley@umich.edu}
 #' @export
 
 COVIMPUTEINITIALIZE = function(Cov, CovMissing){
 	### Code for initializing missing covariate X2 in the example
-	Cov[CovMissing[,'X2'] == T,'X2'] = sample(x=Cov[CovMissing[,'X2']==F,'X2'],
-    						size = sum(as.numeric(CovMissing[,'X2'])), replace = T)	
+	Cov[CovMissing[,'X2'] == T,'X2'] = sample(x=Cov[CovMissing[,'X2']==F,'X2'], size = sum(as.numeric(CovMissing[,'X2'])), replace = T)	
     	return(Cov)
 }
 

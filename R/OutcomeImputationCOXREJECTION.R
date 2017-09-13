@@ -26,7 +26,6 @@
 #' \item [[1]]: deltaRImp, A single imputation of delta_R
 #' \item [[2]]: YRImp, A single imputation of Y_R
 #'}
-#' @author Lauren J Beesley, \email{lbeesley@umich.edu}
 #' @details This function cannot be applied when 'T_R' is included in the model for Recurrence -> Death. In this case, use one of the following functions instead UNEQUALCENSIMPUTECOXNESTEDWEIBULL, UNEQUALCENSIMPUTECOXMH or UNEQUALCENSIMPUTECOXINVERSION.
 #' @export
 
@@ -92,13 +91,9 @@ UNEQUALCENSIMPUTECOXREJECTION = function(datWIDE, beta, alpha, ImputeDat, TransC
 		return(ZERO)
 	}
 
-	
 
 	TAU = max(datWIDE$Y_R[datWIDE$delta_R==1])
-	
-	#which(GImp == 1 & UnequalCens==1 & datWIDE$delta_D == 1)
-	#which(GImp == 1 & UnequalCens==1 & datWIDE$delta_D == 0)
-	
+
 	YRImp = ifelse(GImp==0,datWIDE$Y_D, ifelse(GImp==1 & UnequalCens == 0,datWIDE$Y_R,rep(NA,Nobs) ))
 	deltaRImp = ifelse(GImp==0,rep(0,Nobs), ifelse(GImp==1 & UnequalCens == 0,datWIDE$delta_R,rep(NA,Nobs) ))
 
@@ -112,7 +107,6 @@ UNEQUALCENSIMPUTECOXREJECTION = function(datWIDE, beta, alpha, ImputeDat, TransC
 	deltaRImp[GImp==1 & UnequalCens == 1] = apply(matrix(ratio), 1,mSample)   
 	YRImp[GImp==1 & UnequalCens == 1 & deltaRImp==0] = datWIDE$Y_D[GImp==1 & UnequalCens == 1 & deltaRImp==0]
 
-
 	INDICES = which(is.na(YRImp))
 
 
@@ -124,18 +118,10 @@ UNEQUALCENSIMPUTECOXREJECTION = function(datWIDE, beta, alpha, ImputeDat, TransC
 				
 				#This will give an approximate K (should even be an over-estimate)		
 				timesLOWER = sort(unique(c(Basehaz14[,1], datWIDE$Y_D[m]-Basehaz34[,1], datWIDE$Y_R[m], datWIDE$Y_D[m]) ))
-			  timesLOWER = timesLOWER[timesLOWER>=datWIDE$Y_R[m] & timesLOWER <=datWIDE$Y_D[m] ]
+			  	timesLOWER = timesLOWER[timesLOWER>=datWIDE$Y_R[m] & timesLOWER <=datWIDE$Y_D[m] ]
 				K = max(((exp(XB_beta34[m])*BasehazFun_34(datWIDE$Y_D[m]-timesLOWER))^datWIDE$delta_D[m])*
 					exp(-exp(XB_beta34[m])*as.numeric(sapply(datWIDE$Y_D[m]-timesLOWER,Baseline_Hazard, Basehaz34 )))*
 					exp(-exp(XB_beta14[m])*as.numeric(sapply(timesLOWER,Baseline_Hazard, Basehaz14 ))))
-				
-				# U = timesLOWER
-				# x = sapply(U,fdCOX)
-				# z = K*( (exp(XB_beta13[m])*BasehazFun_13(U))*exp(-exp(XB_beta13[m])*as.numeric(sapply(U,Baseline_Hazard, Basehaz13 )))   ) 
-				# plot(U,x, ylim = c(0,max(z)), xlab = 'Possible Tr Values', ylab = 'Kernel Value', main = 'True and Dominating Kernels',
-					# type = 'l', lwd = 2)
-				# lines(U,z, col = 'red', lwd = 2)
-				# legend(x='topright', fill = c('red', 'black'), legend=c('Dominating Kernel from 13', 'True Kernel'))
 						
 				while(ACCEPT == FALSE){				
 					U1 = runif(n=1, min = 0, max = 1)
@@ -160,19 +146,9 @@ UNEQUALCENSIMPUTECOXREJECTION = function(datWIDE, beta, alpha, ImputeDat, TransC
 						
 			#This will give an approximate K (should even be an over-estimate)		
 			timesLOWER = sort(unique(c(Basehaz14[,1], Basehaz13[,1], datWIDE$Y_R[m], datWIDE$Y_D[m]) ))
-		  timesLOWER = timesLOWER[timesLOWER>=datWIDE$Y_R[m] & timesLOWER <=datWIDE$Y_D[m] ]
+		  	timesLOWER = timesLOWER[timesLOWER>=datWIDE$Y_R[m] & timesLOWER <=datWIDE$Y_D[m] ]
 			K = max((exp(XB_beta13[m])*BasehazFun_13(timesLOWER))*exp(-exp(XB_beta13[m])*as.numeric(sapply(timesLOWER,Baseline_Hazard, Basehaz13 )))*
 			exp(-exp(XB_beta14[m])*as.numeric(sapply(timesLOWER,Baseline_Hazard, Basehaz14 ))))
-			
-			
-			# U = timesLOWER
-  			# x = sapply(U,fdCOX)
-			# z = K*(    (exp(XB_beta34[m])*BasehazFun_34(datWIDE$Y_D[m]-U))*
-					# exp(-exp(XB_beta34[m])*as.numeric(sapply(datWIDE$Y_D[m]-U,Baseline_Hazard, Basehaz34 )))   ) 
-			# plot(U,x, ylim = c(0,max(z)), xlab = 'Possible Tr Values', ylab = 'Kernel Value', main = 'True and Dominating Kernels', 
-				# type='l', lwd = 2)
-			# lines(U,z, col = 'red', lwd = 2)
-			# legend(x='topright', fill = c('red', 'black'), legend=c('Dominating Kernel from 34', 'True Kernel'))
 
 			while(ACCEPT == FALSE){
 				

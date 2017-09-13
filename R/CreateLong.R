@@ -1,5 +1,5 @@
 
-### These functions convert the wide outcome dataset to a stacked long outcome dataset. We reformat the wide dataset into a long outcome dataset for each of the IMPNUM imputed datasets and stack these on top of eachother. Each row corresponds to time at risk for a particular transition for a particular individual in a particular imputed dataset. 
+### These functions convert the wide outcome dataset to a stacked long outcome dataset (augmented data). We reformat the wide dataset into a long outcome dataset for each of the IMPNUM imputed datasets and stack these on top of eachother. Each row corresponds to time at risk for a particular transition for a particular individual in a particular imputed dataset. 
 
 #' @export
 
@@ -27,7 +27,7 @@ CreateLong_MC = function(datWIDE, ImputeDat){
 		datWIDE_temp$status1 = deltaRImp[,i]
 		datWIDE_temp$w1 = (GImp[,i])/IMPNUM
 		#24
-		datWIDE_temp$Tstart2 = ifelse(deltaRImp[,i] == 1,rep(NA,NOBS), rep(0,Nobs))
+		datWIDE_temp$Tstart2 = ifelse(deltaRImp[,i] == 1,rep(NA,NOBS), rep(0,NOBS))
 		datWIDE_temp$Tstop2 = ifelse(deltaRImp[,i] == 1,rep(NA,NOBS), YRImp[,i])
 		datWIDE_temp$status2 = ifelse(deltaRImp[,i] == 1,rep(NA,NOBS), datWIDE$delta_D)
 		datWIDE_temp$time2 = datWIDE_temp$Tstop2-datWIDE_temp$Tstart2
@@ -93,7 +93,7 @@ CreateLong = function(datWIDE, Cov){
 	datWIDE_temp$status1 = datWIDE$delta_R
 	datWIDE_temp$w1 = datWIDE$p
 	#24
-	datWIDE_temp$Tstart2 = ifelse(datWIDE$delta_R == 1,rep(NA,NOBS), rep(0,Nobs))
+	datWIDE_temp$Tstart2 = ifelse(datWIDE$delta_R == 1,rep(NA,NOBS), rep(0,NOBS))
 	datWIDE_temp$Tstop2 = ifelse(datWIDE$delta_R == 1,rep(NA,NOBS), datWIDE$Y_R)
 	datWIDE_temp$status2 = ifelse(datWIDE$delta_R == 1,rep(NA,NOBS), datWIDE$delta_D)
 	datWIDE_temp$time2 = datWIDE_temp$Tstop2-datWIDE_temp$Tstart2

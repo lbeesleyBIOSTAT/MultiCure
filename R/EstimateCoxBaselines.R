@@ -26,7 +26,6 @@
 #' @return EST a list containing the estimates for the baseline hazard function (and cumulative baseline hazard function) for the 1->3, 2->4, 1->4, and 3->4 transitions.
 #'
 #'
-#' @author Lauren J Beesley, \email{lbeesley@umich.edu}
 #' @export
 
 
@@ -36,6 +35,7 @@ Baselinehazard_IMP = function(datWIDE, CovImp,GImp, YRImp,deltaRImp, beta, alpha
 	
 	UnequalCens = ifelse(datWIDE$Y_R < datWIDE$Y_D & datWIDE$delta_R == 0 & is.na(datWIDE$G), 1, 0)
 	IMPNUM = length(CovImp)
+	Nobs = length(datWIDE[,1])
 	#################################
 	### Estimate Baseline Hazards ###
 	#################################
@@ -125,7 +125,6 @@ Baselinehazard_IMP = function(datWIDE, CovImp,GImp, YRImp,deltaRImp, beta, alpha
 #' @param p The current estimate of the E-step weights
 #' @return EST a list containing a step function estimate for the CUMULATIVE baseline hazard function for each transition in the following order: 1->3, 2->4, 1->4, 3->4
 #'
-#' @author Lauren J Beesley, \email{lbeesley@umich.edu}
 #' @export
 
 

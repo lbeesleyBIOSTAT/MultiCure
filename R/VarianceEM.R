@@ -31,11 +31,17 @@
 #' \item Estimate an estimate of the multistate cure model parameter
 #' \item Variance an estimate of variance of the the multistate cure model parameter
 #'}
-#' @author Lauren J Beesley, \email{lbeesley@umich.edu}
+#' @examples
+#' attach(SimulateMultiCure(type = "NoMissingness"))
+#' Cov = data.frame(X1,X2)
+#' VARS = names(Cov)
+#' TransCov = list(Trans13 = VARS, Trans24 = VARS, Trans14 = VARS, Trans34 = VARS, PNonCure = VARS)
+#' datWIDE = data.frame( Y_R, Y_D, delta_R , delta_D, G)
+#' fit = MultiCure(iternum=100, datWIDE, Cov, ASSUME = "SameHazard", TransCov = TransCov, BASELINE = "weib") 
+#' OUT = VarianceEM(fit,iternum=20, bootnum=50, datWIDE, Cov, ASSUME = "SameHazard", TransCov, BASELINE = "weib")
 #' @export
 
-VarianceEM = function(fit,iternum, bootnum, datWIDE, Cov, 
-												ASSUME, TransCov, BASELINE, PENALTY = 'None'){				
+VarianceEM = function(fit,iternum, bootnum, datWIDE, Cov, ASSUME, TransCov, BASELINE, PENALTY = 'None'){				
 	if(BASELINE == 'weib'){
 		PARAMINIT = list(beta = fit[[1]], alpha = fit[[2]], scale = fit[[3]], shape = fit[[4]])		
 	}else{

@@ -30,7 +30,7 @@ MStep_WEIB = function(datWIDE, Cov, ImputeDat, ASSUME, TransCov, NEEDTOIMPUTE, P
 	if(PENALTY == 'None'){
 		TRANS = I
 	}else if(PENALTY == 'Ridge'){
-		TRANS = ridge
+		TRANS = survival::ridge
 	}else{
 		stop('Invalid PENALTY Argument: Only Implemented for Ridge Penalty and No Penalty')
 	}	
@@ -167,13 +167,7 @@ MStep_COX = function(datWIDE, Cov, ImputeDat, ASSUME, TransCov, NEEDTOIMPUTE, PE
 		Cov_long_24 = data.frame(Cov_long[,TransCov$Trans24] )
 		Cov_long_24[!(datLONG_sub$from == 2 & datLONG_sub$to == 4),] = 0
 	}		
-	# if(PENALTY == 'None'){
-		# TRANS = I
-	# }else if(PENALTY == 'Ridge'){
-		# TRANS = ridge
-	# }else{
-		# stop('Invalid PENALTY Argument: Only Implemented for Ridge Penalty and No Penalty')
-	# }	
+
 	A1 = length(TransCov$Trans13)
 	A2 = length(TransCov$Trans24)
 	A3 = length(TransCov$Trans14)

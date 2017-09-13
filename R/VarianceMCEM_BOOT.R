@@ -35,10 +35,22 @@
 #'}
 #' @details This function provides parameter estimates and estimated variances. The parameter estimates are obtained using Rubin's rules, but an alternative estimate of the multistate cure model parameter can be obtained by averaging the parameter estimates from the last few iterations of the model fitting algorithm. In our experience, we found that the approach that averages across the last few iterations (rather than estimated using Rubin's rules) provides a better estimate of the parameter of interest.
 #'
-#' @author Lauren J Beesley, \email{lbeesley@umich.edu}
+#' @examples
+#' attach(SimulateMultiCure(type = "UnequalCensoring"))
+#' Cov = data.frame(X1,X2)
+#' VARS = names(Cov)
+#' TransCov = list(Trans13 = VARS, Trans24 = VARS, Trans14 = VARS, Trans34 = VARS, PNonCure = VARS)
+#' datWIDE = data.frame( Y_R, Y_D, delta_R , delta_D, G)
+#' fit = MultiCure(iternum = 100, datWIDE, Cov, ASSUME = "SameHazard", TransCov = TransCov, BASELINE = "weib", IMPNUM = 10) ### Note: This will take a moment
+#' Proper = ProperDraws_MC(datWIDE,Cov, CovImp = fit[[9]], GImp = fit[[10]], YRImp = fit[[11]], deltaRImp = fit[[12]], ASSUME = "SameHazard", TransCov = TransCov, BASELINE = "weib") ### Note: This will take a moment
+#' OUT = VarianceMCEM_BOOT(fit, bootnum = 50, datWIDE, CovImp = Proper[[1]], GImp = Proper[[2]], YRImp = Proper[[3]], deltaRImp = Proper[[4]],  ASSUME = "SameHazard", TransCov, BASELINE = "weib")
 #' @export
 
 VarianceMCEM_BOOT = function(fit,bootnum, datWIDE, CovImp, GImp, YRImp, deltaRImp, ASSUME, TransCov, BASELINE, PENALTY = 'None'){			
+	ASSUME = match.arg(ASSUME, choices = c('SameHazard', 'AllSeparate', 'SameBaseHaz', 'ProportionalHazard'))
+	BASELINE = match.arg(BASELINE, choices = c('weib','cox'))
+	PENALTY = match.arg(PENALTY, choices = c('None', 'Ridge', 'Lasso'))
+
 	if(BASELINE == 'weib'){
 		PARAMINIT = list(beta = fit[[1]], alpha = fit[[2]], scale = fit[[3]], shape = fit[[4]])		
 	}else{

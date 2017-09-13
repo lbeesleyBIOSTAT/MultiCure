@@ -27,7 +27,6 @@
 #' \item [[1]]: deltaRImp, A single imputation of delta_R
 #' \item [[2]]: YRImp, A single imputation of Y_R
 #'}
-#' @author Lauren J Beesley, \email{lbeesley@umich.edu}
 #' @export
 
 

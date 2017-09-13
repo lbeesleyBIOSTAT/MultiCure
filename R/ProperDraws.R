@@ -28,6 +28,7 @@
 #' @param TransCov a list with elements: Trans13, Trans24, Trans14, Trans34, PNonCure. Each list element is a vector containing the names of the variables in Cov to be used in the model for the corresponding transition. 13 is NonCured -> Recurrence, 24 is Cured -> Death, 14 is NonCured -> Death, 34 is Recurrence -> Death. PNonCure contains the names of the covariates for the logistic regression for P(NonCure). 
 #' @param BASELINE This variable indicates the assumptions about the baseline hazard form. This can take values 'weib' and 'cox'
 #' @param PENALTY This variable indicates whether we are using any variable selection in the model fitting. Right now, the options are 'None' (no variable selection), 'Ridge' (ridge regression for all covariates in all models) and 'Lasso' (lasso for all covariates in all models, only implemented for Cox baseline hazards)
+#' @param POSTITER This variable indicates the number of post-processing steps should be done. The default is 5.
 #'
 #' @return OUT a matrix containing the following:
 #' \itemize{
@@ -38,7 +39,14 @@
 #'}
 #' @details In order to output the imputed data from MultiCure, one must use the trace = TRUE option in MultiCure.
 #'
-#' @author Lauren J Beesley, \email{lbeesley@umich.edu}
+#' @examples
+#' attach(SimulateMultiCure(type = "UnequalCensoring"))
+#' Cov = data.frame(X1,X2)
+#' VARS = names(Cov)
+#' TransCov = list(Trans13 = VARS, Trans24 = VARS, Trans14 = VARS, Trans34 = VARS, PNonCure = VARS)
+#' datWIDE = data.frame( Y_R, Y_D, delta_R , delta_D, G)
+#' fit = MultiCure(iternum = 100, datWIDE, Cov, ASSUME = "SameHazard", TransCov = TransCov, BASELINE = "weib", IMPNUM = 10) ### Note: This will take a moment
+#' Proper = ProperDraws_MC(datWIDE,Cov, CovImp = fit[[9]], GImp = fit[[10]], YRImp = fit[[11]], deltaRImp = fit[[12]], ASSUME = "SameHazard", TransCov = TransCov, BASELINE = "weib") ### Note: This will take a moment
 #' @export
 
 ProperDraws_MC = function( datWIDE,Cov,CovImp, GImp, YRImp, deltaRImp, COVIMPUTEFUNCTION = NULL,  COVIMPUTEINITIALIZE = NULL,
@@ -53,9 +61,11 @@ ProperDraws_MC = function( datWIDE,Cov,CovImp, GImp, YRImp, deltaRImp, COVIMPUTE
 
 	IMPNUM = length(CovImp)
 	if(sum(UnequalCens) != 0 & is.null(UNEQUALCENSIMPUTE)){
-		if(BASELINE == 'weib'){
-			UNEQUALCENSIMPUTE = UNEQUALCENSIMPUTEWEIB
-		}else{UNEQUALCENSIMPUTE = UNEQUALCENSIMPUTECOXMH}
+		if(BASELINE == 'weib' & 'T_R' %in% TransCov$Trans34){
+			UNEQUALCENSIMPUTE = UNEQUALCENSIMPUTEWEIBINVERSION
+		}else if(BASELINE == 'weib' & !('T_R' %in% TransCov$Trans34)){
+			UNEQUALCENSIMPUTE = UNEQUALCENSIMPUTEWEIBREJECTION
+		}else{UNEQUALCENSIMPUTE = UNEQUALCENSIMPUTECOXMH}	
 	}
 	if(sum(CovMissing) != 0 & (is.null(COVIMPUTEFUNCTION) | is.null(COVIMPUTEINITIALIZE))){stop('Must Specify Covariate Initialization and Imputation Functions')	}		
 	if(ASSUME == 'ProportionalHazard'){
@@ -73,13 +83,11 @@ ProperDraws_MC = function( datWIDE,Cov,CovImp, GImp, YRImp, deltaRImp, COVIMPUTE
 	YRImpSAVE = YRImp
 	for(i in 1:IMPNUM){
 		TAU_R = max(datWIDE$Y_R[datWIDE$delta_R==1])
- 		TAU_D = max(datWIDE$Y_D[datWIDE$delta_D==1])		
- 		DIFFMAX =  max((datWIDE$Y_D -datWIDE$Y_R)[datWIDE$delta_D==1 & datWIDE$delta_R==1]) #max distance of Yr and Yd such that both events occur
 		IMPUTEYR = (UnequalCens ==1)
-		MIN = pmax(datWIDE$Y_R[IMPUTEYR],datWIDE$Y_D[IMPUTEYR] -DIFFMAX)
+		MIN = datWIDE$Y_R[IMPUTEYR]
 		MAX = pmin(datWIDE$Y_D[IMPUTEYR], TAU_R)
 		MIN = ifelse(MIN >= MAX, MAX, MIN)
-		U = runif(sum(IMPUTEYR),min = MIN, max = MAX)
+		U = apply(cbind(MIN, MAX),1, mHPropose) 
 		YRImpSAVE[IMPUTEYR,i] = ifelse(deltaRImp[IMPUTEYR,i]==1, YRImp[IMPUTEYR,i], U)	
 	}
 	iter = 1
