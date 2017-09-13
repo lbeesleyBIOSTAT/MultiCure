@@ -1,0 +1,295 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath, amsfonts, amssymb} %These packages allow for various math types to be used.  
+\usepackage{graphicx,subfig} %this allows for the use of figures and subfigures
+\usepackage{float}
+\usepackage[english]{babel}
+\usepackage{caption}
+\usepackage{accents} 
+\usepackage{color}
+\usepackage{amsthm} %This creates theorem environments.  You still have to specific what a theorem is (which we'll see later).
+\usepackage[margin=1in]{geometry}
+\graphicspath{ {imagesUsingMultiCure/} }
+\usepackage{natbib}
+
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing,calc}
+\usepackage[many]{tcolorbox}
+\newtcolorbox{rightbrace}{%
+    enhanced jigsaw, 
+    breakable, % allow page breaks
+    frame hidden, % hide the default frame
+    parbox=false,
+}
+
+\title{Using Package MultiCure to Fit Multistate Cure Models}
+\author{\textbf{Lauren J Beesley} \\
+\small Department of Biostatistics, University of Michigan\\
+\small Contact: lbeesley@umich.edu}
+\date{\today}   
+ 
+%\VignetteIndexEntry{UsingMultiCure}
+%\VignetteEngine{knitr}
+\begin{document}
+%\SweaveOpts{concordance=TRUE}
+\maketitle 
+%These two lines are to avoid having lots of white space before and after align statements
+\abovedisplayskip=0pt
+\belowdisplayskip=0pt
+\raggedbottom
+
+
+In this vignette, we provide a brief introduction to using the R package \textit{MultiCure} to fit multistate cure models. We will not include technical details about the multistate cure model or the model fitting algorithms here. We will generally note that this R package includes two different model fitting algorithms: the EM algorithm and the Monte Carlo EM algorithm. The EM algorithm is used for fitting the multistate cure model when we have missingness in partially latent cure status but have no other sources of missingness. The Monte Carlo EM algorithm was developed to handle two additional sources of missingness: missingness in the covariates and missingness in the outcome information related to having unequal follow-up for the two outcome events. This latter form of missingness is common in the setting where the outcomes of interest are recurrence and death. 
+
+
+\section{Multistate Cure Model Structure}
+For details about the multistate cure model structure, see \cite{Conlon2014}. Here, we will just list basic details. \textbf{Figure \ref{fig:diagram}} shows the structure of the multistate cure model used in this package. We note that the outcome events may be events other than recurrence and death, but we will use these events as examples. 
+\begin{figure}[H] 
+\caption{KM Plots for Time to Recurrence and Death in Illustrative Data}
+\vspace{-0.5cm}
+\center
+\includegraphics[width=4in]{ModelDiagram}
+\label{fig:diagram}
+\end{figure}
+\noindent We model the probability of not being cured by initial treatment using logistic regression: 
+$$\text{logit}(P(\text{ Not Cured } = 1 \vert \text{ Covariates } X_i) )= \alpha_0 + \alpha_1^T X_i$$ 
+\noindent We model the transition rate from state $j$ to state $k$ for all transitions except $3 \rightarrow 4$ using proportional hazards model: 
+$$\lambda_{jk}(t) = \lambda^0_{jk}(t) \exp(\beta_{jk}^T X_{i})$$
+\noindent In the model for the $3 \rightarrow 4$ transition, we use the ``clock reset" method in which time is reset to zero upon entering state 3, and use a proportional hazards regression to model the residual time in state 3 before entering state 4 as follows: 
+$$ \lambda_{34}(t - T_{ir}) = \mathbb{I}(t > T_{ir}) \lambda^0_{34}(t - T_{ir}) \exp(\beta_{34}^T X_{i})$$
+\noindent where $T_{ir}$ is the time of recurrence. We can incorporate the time spent in state 1, $T_{ir}$, as a covariate in $X_{i}$ for this transition if desired. We may use parametric or nonparametric forms for the baseline hazards.\\
+\indent Let $\Lambda_{jk}(t)$ and $\Lambda^0_{jk}(t)$ represent the cumulative hazard and cumulative baseline hazard for transition $j \rightarrow k$. We consider several possible restrictions on the baseline hazards for the $2 \rightarrow 4$ and $1 \rightarrow 4$ transitions, which may typically represent death from other causes. It may be reasonable to assume that the hazards are identical ($\Lambda_{14}(t) = \Lambda_{24}(t)\ \forall \ t \geq 0$). In this case, the multistate cure model reduces to a CPH cure model for recurrence time with two additional regressions for time to death with and without recurrence \citep{Conlon2014}. We may also assume the hazards are proportional ($\Lambda_{14}(t) = \Lambda_{24}(t) \exp\{\beta_0\}$) or that the baseline hazards are equal ($\Lambda^0_{14}(t) = \Lambda^0_{24}(t)$, $\beta_{24}$ and $\beta_{14}$ unrestricted), or we may make no equality assumptions ($\Lambda_{14}(t)$ and $\Lambda_{24}(t)$ unrestricted). 
+
+
+\section{Model Fitting Software}
+\indent We simulate a single dataset under a multistate cure model with two multivariate normal covariates. \textbf{Figure \ref{fig:1}} shows plots resulting from applying the Kaplan-Meier estimator to time to recurrence and time to death for this example dataset. 
+\begin{figure}[H] 
+\caption{KM Plots for Time to Recurrence and Death in Illustrative Data}
+\vspace{-0.5cm}
+\center
+        \subfloat{
+        \includegraphics[width=2in]{ToyKMRecurrence}
+        }
+        \subfloat{
+        \includegraphics[width=2in]{ToyKMDeath}
+        }
+\label{fig:1}
+\end{figure}
+\noindent We note that, since recurrence and death from other causes are competing events, the Kaplan-Meier estimate for time to recurrence does not represent the true recurrence rate in the population. However, we can use this Kaplan-Meier plot to evaluate when during follow-up the recurrences are occurring. In order for the proposed methods to perform well, we need to have sufficient follow-up for both recurrence and death. In particular, the Kaplan-Meier plot for recurrence needs to plateau, and we may suppose that subjects at risk after some late follow-up time (eg. 50 in this example) are cured.  \\
+\indent The function \textbf{MultiCure} performs the proposed EM or MCEM algorithms in order to estimate $\theta$. The form of the baseline hazard functions is specified by the argument \textit{BASELINE} and can take values 'weib' for Weibull baseline hazards or 'cox' for Cox baseline hazards. The restrictions on the $1 \rightarrow 4$ and $2 \rightarrow 4$ hazards can be specified with the argument \textit{ASSUME}. Possible options include `SameHazard' $(\Lambda_{14}(t) = \Lambda_{24}(t))$, `SameBaseHaz' $(\Lambda^0_{14}(t) = \Lambda^0_{24}(t))$, `ProportionalHazard' $(\Lambda_{14}(t) = e^{\beta_0} \Lambda_{24}(t))$, and `AllSeparate' (no restrictions).   \\
+\indent First, we need to put the data into the correct format. We create a data frame \textit{datWIDE} containing the following variables: `Y\_R' = recurrence event/censoring time,  `delta\_R' = recurrence event/censoring indicator, `Y\_D' = death event/censoring time,  `delta\_D' = death event/censoring indicator, `G' = non-cure status (NA if unknown, 1 if recurrence, 0 if assumed cured). We also create a data frame \textit{Cov} containing the covariates we want to use in the model fit. We then create list \textit{TransCov} to denote which covariates we want to include in which transition. \textit{TransCov} contains elements `Trans13', `Trans24',  `Trans14', `Trans34', and `PNonCure'. Each element is a character vector containing the names of the covariates in \textit{Cov} to be used in the model for each transition. If we wish to include no covariates in the model for a particular transition, we can include an all-zero covariate in \textit{Cov} and list this covariate in \textit{TransCov}. In our illustrative example, we will include both covariates in all parts of the multistate cure model. 
+
+\newpage
+\subsection{Function Sequence}
+\textbf{Figure \ref{fig:sequence}} provides a diagram of the sequence of functions needed to obtain a complete multistate cure model fit. The parameter estimates can be obtained using the function MultiCure. The function MultiCure can estimate parameters using an EM algorithm (only missingness in cure status) or an MCEM algorithm (missingness in cure status and missingness in covariates and/or unequal censoring of the outcomes). If we fit using an EM algorithm, corresponding standard errors can be obtained using the function VarianceEM. If we fit using an MCEM algorithm, we first obtain "proper" imputations for the missing data using the function ProperDraws\_MC. Using the imputed data obtained from the functionProperDraws\_MC, we can then estimate standard errors using either function VarianceMCEM\_BOOT or function VarianceMCEM\_NOBOOT. 
+\begin{figure}[H]
+\begin{center}
+\caption{Function Sequence for Fitting Multistate Cure Model}
+\includegraphics[trim={0 0 0 0cm}, clip, width=6in]{Overall}
+\label{fig:sequence}
+\end{center}
+\end{figure}
+
+
+\newpage
+\subsection{Fitting the Multistate Cure Model using an EM Algorithm}
+\indent We first consider the setting with fully-observed coveriates and equal follow-up for all subjects. Suppose we want to fit a multistate cure model to the complete data assuming Weibull baseline hazards and equal $1 \rightarrow 4$ and $2 \rightarrow 4$ hazards.  We can perform the proposed EM algorithm to fit the multistate cure model in R as follows:
+ \begin{rightbrace}
+{\footnotesize
+\begin{lstlisting}[language=R, showstringspaces=false, keywords={}]
+Cov = data.frame(X1,X2)
+VARS = names(Cov)
+TransCov = list(Trans13 = VARS, Trans24 = VARS, Trans14 = VARS, 
+		Trans34 = VARS, PNonCure = VARS)
+datWIDE = data.frame( Y_R, Y_D, delta_R , delta_D, G)
+fit = MultiCure(iternum, datWIDE, Cov, ASSUME = `SameHazard', 
+		TransCov = TransCov, BASELINE = `weib')
+\end{lstlisting}
+}
+ \end{rightbrace}
+\indent Object \textit{fit} will be a list containing the parameter estimates at the final iteration and the estimates at all previous iterations. Argument \textit{iternum} indicates the number of iterations the algorithm will perform. We can examine the parameter estimates across iterations to evaluate the model convergence. \textbf{Figure \ref{fig:2}} shows the trace plots for our simulated dataset.
+\begin{figure}[H]
+\begin{center}
+\caption{Convergence of Multistate Cure Model Parameters across Iterations}
+\vspace{-0.5cm}
+\includegraphics[width = 6in]{ToyEMConvergence}
+\label{fig:2}
+\vspace{-1cm}
+\end{center}
+\end{figure}
+\indent We can see that the parameter estimates converge very quickly. The parameters for transition $2 \rightarrow 4$ are assumed to be equal to the parameters for transition $1 \rightarrow 4$, so the corresponding lines are the same.\\
+\indent Not that we have obtained an estimate for $\theta$, we now want to estimate corresponding standard errors. The function \textbf{VarianceEM} performs variance estimation using bootstrap methods when no covariate missingness or unequal follow-up is present. We can use the following code:
+ \begin{rightbrace}
+{\footnotesize
+\begin{lstlisting}[language=R, showstringspaces=false]
+OUT = VarianceEM(fit,iternum=20, bootnum=50, datWIDE, 
+		Cov, ASSUME = `SameHazard', TransCov, BASELINE = `weib')
+\end{lstlisting}
+}
+ \end{rightbrace}
+\noindent The argument \textit{bootnum} corresponds to the number of bootstrap samples, and \textit{iternum} corresponds to the number of iterations of the EM algorithm used for each bootstrap sample. The object \textit{OUT} is a data frame containing the variance estimates for each model parameter. \\
+
+
+\subsection{Fitting the Multistate Cure Model using an MCEM Algorithm}
+\indent Suppose instead that we impose missingness in the second covariate. Then, we can fit a multistate cure model using the proposed MCEM algorithm using \textbf{MultiCure} with additional arguments. The MCEM algorithm involves imputing values for the missing covariate at each iteration of the model fitting algorithm, and the user must specify a function \textbf{COVIMPUTEFUNCTION} for performing this imputation. The user-specified function must have the following arguments: `datWIDE', `param', `ImputeDat', and `TransCov'. When the user-specified function is called within \textbf{MultiCure}, these take the following values: \\
+ (1) \textit{datWIDE}: this is the same as in \textbf{MultiCure}\\
+ (2) \textit{param}: a vector containing the most recent model parameters. \\
+ (3) \textit{ImputeDat}: a list with elements [[1]], a binary vector taking value 1 if subject has unequal follow-up; [[2]], a binary matrix taking value 1 if the corresponding element of \textit{Cov} is missing. The list also contains \textit{single} imputations of \textit{Cov}, $G$, $Y_R$, and $\delta_R$ from the previous iteration in slots [[3]]-[[6]] respectively. If \textit{BASELINE} = `cox' in \textbf{MultiCure}, this list will also contain the most recent estimate of the baseline hazards for each transition.\\
+(4) \textit{TransCov}: this is the same as in \textbf{MultiCure}\\
+\\
+\textbf{COVIMPUTEFUNCTION} must return a data frame containing a \textit{single} imputation of \textit{Cov}. The user can use any method he/she wants to perform the imputation. In the main paper, we use a method similar to the method proposed in \cite{Bartlett2014}. Alternatively, the user could call the function \textit{mice} (from package mice in R) or another standard imputation software within \textbf{COVIMPUTEFUNCTION}.\\
+\indent The user must also specify a function \textbf{COVIMPUTEINITIALIZE} for initializing the missing values of \textit{Cov}. This has argument (S1) \textit{Cov} (same as \textbf{MultiCure}) and (S2) \textit{CovMissing} (binary matrix taking value 1 if corresponding element of \textit{Cov} is missing). This function must return a single initialized version of \textit{Cov}. We can then fit a multistate cure model using the following:
+ \begin{rightbrace}
+{\footnotesize
+\begin{lstlisting}[language=R, showstringspaces=false]
+fit = MultiCure(iternum = 200, datWIDE, Cov, ASSUME = `SameHazard',
+ 	TransCov = TransCov, BASELINE = `weib', IMPNUM = 10,
+	COVIMPUTEFUNCTION = userfunc1, COVIMPUTEINITIALIZE = userfunc2)
+\end{lstlisting}
+}
+ \end{rightbrace}
+The argument \textit{IMPNUM} is an integer corresponding to the number of imputed datasets to obtain. As before, object \textit{fit} will be a list containing the parameter estimates at the final iteration and the estimates at all previous iterations. It will also contain the imputed version of the data at the final iteration. We can again examine the parameter estimates across iterations to evaluate the model convergence. \textbf{Figure \ref{fig:3}} shows the trace plots from the MCEM algorithm applied to our simulated dataset.
+\begin{figure}[H]
+\begin{center}
+\caption{Convergence of Multistate Cure Model Parameters across Iterations}
+\vspace{-0.5cm}
+\includegraphics[width = 6in]{ToyMCEMConvergence}
+\vspace{-0.5cm}
+\label{fig:3}
+\end{center}
+\end{figure}
+\indent We can obtain an estimate of $\theta$ by taking the mean of the parameter estimates from the last few iterations of the MCEM algorithm. In order to estimate the standard errors, we first perform a post-processing step that converts the ``improper" imputed data from the MCEM algorithm into ``proper" imputations as defined in \cite{Little2002}. 
+We can use the function \textbf{ProperDraws\_MC} as follows:
+ \begin{rightbrace}
+{\footnotesize
+\begin{lstlisting}[language=R, showstringspaces=false]
+Proper = ProperDraws_MC(datWIDE,Cov, CovImp = fit[[9]], GImp = fit[[10]], 
+	YRImp = fit[[11]], deltaRImp = fit[[12]], 
+	COVIMPUTEFUNCTION = userfunc1,  COVIMPUTEINITIALIZE = userfunc2, 
+	ASSUME = `SameHazard', TransCov, BASELINE = `weib')
+\end{lstlisting}
+}
+ \end{rightbrace}
+The object \textit{Proper} is a list containing the updated imputed data. We can then estimate the standard errors overall by estimating the standard errors separately for each imputed dataset and then using Rubin's rules to obtain the overall standard errors. Within each imputed dataset, we can estimate standard errors using software to fit proportional hazards and logistic regression models or using bootstrap methods. Variance estimation using bootstrap methods can be performed using:
+ \begin{rightbrace}
+{\footnotesize
+\begin{lstlisting}[language=R, showstringspaces=false]
+OUT = VarianceMCEM_BOOT(fit, bootnum = 50, datWIDE, 
+	CovImp = Proper[[1]], GImp = Proper[[2]], YRImp = Proper[[3]], 
+	deltaRImp = Proper[[4]],  ASSUME = `SameHazard', TransCov, 
+	BASELINE = `weib')
+\end{lstlisting}
+}
+ \end{rightbrace}
+Variance estimation using standard errors from logistic/proportional hazards regression fits to the imputed data can be performed using:
+ \begin{rightbrace}
+{\footnotesize
+\begin{lstlisting}[language=R, showstringspaces=false]
+OUT = VarianceMCEM_NOBOOT(fit, datWIDE, CovImp = Proper[[1]], 
+	GImp = Proper[[2]], YRImp = Proper[[3]], deltaRImp = Proper[[4]],  
+	ASSUME = `SameHazard', TransCov, BASELINE = `weib')
+\end{lstlisting}
+}
+ \end{rightbrace}
+\noindent The second variance estimation method is faster than the first, but otherwise either method can be used. The object \textit{OUT} will contain the variance estimates for $\hat \theta$. \\
+\indent Suppose we had unequal censoring instead of or in addition to covariate missingness. We use the same code as presented above except that in the case of fully-observed covariates, the covariate imputation and initialization functions may be left unspecified. 
+
+
+
+\subsection{Additional Tools}
+In addition to functions for fitting the multistate cure model, we provide functions for data visualization prior to fitting and prediction based on the multistate cure model fit. 
+
+\subsubsection{Outcome Data Visualization}
+\indent In terms of visualization, we have created an RShiny application that provides the Kaplan-Meier estimator applied to time to recurrence and overall survival. Additionally, the application allows the user to create a plot showing the follow-up for overall survival for each subject. The user can then plot event and censoring times for recurrence and death, allowing the user to visualize when the events and censorings of each type are occurring. This plot can be generated using the entire analytical sample or restricting to the subset of subjects with unequal censoring. \textbf{Figure \ref{fig:4}} shows the application output for an example simulated dataset. 
+\begin{figure}[H]
+\begin{center}
+\caption{R Shiny App Output for Data Visualization}
+\includegraphics[trim={0 0 0 0}, clip, width=5in]{RShiny1}
+\label{fig:4}
+\end{center}
+\end{figure}
+In this example, we have generated a plot comparing the observed recurrences in our analytical sample (dots) to the follow-up times for overall survival (lines). In this example data, we can see that the majority of the observed recurrences occur early in follow-up and slow down substantially by about time 40. We can run the RShiny application using the following code:
+ \begin{rightbrace}
+{\footnotesize
+\begin{lstlisting}[language=R, showstringspaces=false, keywords={}]
+datWIDE = data.frame( Y_R, Y_D, delta_R , delta_D)
+VISUALIZEDATA(datWIDE)
+\end{lstlisting}
+}
+ \end{rightbrace}
+ 
+ \subsubsection{Prediction}
+\indent In addition to the data visualization application, we have also developed an application for estimating the state occupancy probabilities over time given user-specified baseline covariate values based on a multistate cure model fit. We provide estimates 1) incorporating baseline covariates only and 2) incorporating baseline covariates and some post-baseline followup (except when we have Cox baseline hazards and fit using the MCEM algorithm). For a given set of baseline covariates (and potentially some post-baseline follow-up) and a particular time $t$, we estimate the state occupancy probability. Similar estimates for the overall survival probability and the event-free probability are also provided. The plots produced by the application can be downloaded to the working directory. Three versions of this application are provided based on the assumptions made in the multistate modeling. \textbf{Figure \ref{fig:statesequence}} shows the sequence of functions used to obtain the state occupancy probabilities in various modeling settings.
+\begin{figure}[H]
+\begin{center}
+\caption{Function Sequence for Estimating State Occupancy Probabilities}
+\includegraphics[trim={0 0 0 0}, clip, width=5in]{StateOccupancy}
+\label{fig:statesequence}
+\end{center}
+\end{figure}
+\noindent\underline{Version 1: Weibull Baseline Hazards}\\
+Suppose first that the multistate cure model was fit assuming Weibull baseline hazards. We can run the RShiny app using the following code:
+ \begin{rightbrace}
+{\footnotesize
+\begin{lstlisting}[language=R, showstringspaces=false, keywords={}]
+STATEOCCUPANCYWEIB(times, TransCov, newCov, beta, alpha, scale, shape) 
+\end{lstlisting}
+}
+ \end{rightbrace}
+\noindent where \textit{times} is a vector of the times at which the probabilities should be estimated, \textit{TransCov} is the same as before, and \textit{newCov} is a data frame containing the covariate values we want to make predictions for. The structure of \textit{newCov} should match the structure of \textit{Cov} from the multistate cure model fit. \textit{beta}, \textit{alpha}, \textit{scale}, and \textit{shape} are the estimated parameter values from the multistate cure model fit.\\
+\indent \textbf{Figure \ref{fig:5}} shows some of the application output for an example simulated dataset. \textbf{Figure \ref{fig:5}a} shows the estimated state occupancy plots for two different subjects incorporating only baseline information. \textbf{Figure \ref{fig:5}b} shows the estimated probabilities assuming these same subjects were known to have been alive and recurrence-free at $t=12$. \textbf{Figure \ref{fig:5}c} shows the densities associated with each of the state transitions for each subject. Although not shown, the drop-down menu has additional options for displaying the overall survival probability estimates and the event-free probability estimates for each subject.
+\begin{figure}[H]
+\begin{center}
+\caption{R Shiny App Output for Prediction}
+        \subfloat[]{
+        \includegraphics[trim={0 0 0 1.8cm}, clip, width=6in]{RShiny2}
+        }\\
+        \subfloat[]{
+        \includegraphics[trim={0 0 0 1.9cm}, clip, width=6in]{RShiny3}
+        }\\
+        \subfloat[]{
+        \includegraphics[trim={0 0 0 1.8cm}, clip, width=6in]{RShiny4}
+        }
+\label{fig:5}
+\end{center}
+\end{figure}
+\noindent\underline{Version 2: Cox Baseline Hazards, Fit using EM Algorithm}\\
+Suppose next that the multistate cure model was fit assuming Cox baseline hazards and using data that had no missing covariates or unequal censoring. We can run the corresponding RShiny app using the following code:
+\begin{rightbrace}
+{\footnotesize
+\begin{lstlisting}[language=R, showstringspaces=false, keywords={}]
+Haz = BaselineHazard_NOIMP(datWIDE, Cov, beta, alpha, TransCov, ASSUME, p)	
+STATEOCCUPANCYCOX_NOIMP(times, TransCov, newCov, beta, alpha, 
+	Haz_13 = Haz[[1]], Haz_24 = Haz[[2]], 
+	Haz_14 = Haz[[3]], Haz_34 = Haz[[4]]) 
+\end{lstlisting}
+}
+ \end{rightbrace}
+\noindent Here, the function \textbf{BaselineHazard\_NOIMP} provides the estimate for the cumulative baseline hazard function for each transition at the final iteration of the EM algorithm. We use these cumulative hazards to estimate the state occupancy probabilities.\textit{beta} and \textit{alpha} are the estimated parameter values from the multistate cure model fit, and \textit{TransCov}, \textit{Cov}, and \textit{ASSUME} are the same as in \textbf{MultiCure}. \textit{newCov} is a data frame containing the covariate values we want to make predictions for. The structure of \textit{newCov} should match the structure of \textit{Cov} from the multistate cure model fit. \\
+\indent The output of this function is very similar to the output shown in \textbf{FigureS11} except that we provide the estimated cumulative hazard function for each transition rather than the density functions.\\
+\\
+\noindent\underline{Version 3: Cox Baseline Hazards, Fit using MCEM Algorithm}\\
+Suppose next that the multistate cure model was fit assuming Cox baseline hazards and using data that had no missing covariates or unequal censoring. We can run the corresponding RShiny app using the following code:
+ \begin{rightbrace}
+{\footnotesize
+\begin{lstlisting}[language=R, showstringspaces=false, keywords={}]
+haz = Baselinehazard_IMP(datWIDE, CovImp,GImp, YRImp,deltaRImp, 
+	beta, alpha, TransCov, ASSUME)	
+STATEOCCUPANCYCOX_IMP(times, TransCov, newCov, beta, alpha, 
+	Basehaz13 = haz[[1]], Basehaz24 = haz[[2]], 
+	Basehaz14 = haz[[3]], Basehaz34 = haz[[4]]) 
+\end{lstlisting}
+}
+ \end{rightbrace}
+\noindent Here, the function \textbf{BaselineHazard\_IMP} provides the estimate for the  baseline hazard function for each transition at the final iteration of the MCEM algorithm.\textit{beta} and \textit{alpha} are the estimated parameter values from the multistate cure model fit, and \textit{TransCov}, \textit{Cov}, and \textit{ASSUME} are the same as in \textbf{MultiCure}. \textit{CovImp}, \textit{GImp}, \textit{YRImp}, and \textit{deltaRImp} are the imputed data output by \textbf{MultiCure} from the final iteration of the MCEM algorithm. As before, \textit{newCov} is a data frame containing the covariate values we want to make predictions for. The structure of \textit{newCov} should match the structure of \textit{Cov} from the multistate cure model fit. Again, the output of this function is very similar to the output shown in \textbf{Figure \ref{fig:5}} except that we provide the estimated cumulative hazard function for each transition rather than the density functions.
+
+
+
+
+
+\newpage
+\bibliographystyle{biorefs}
+\bibliography{MultistateCureBib}
+
+
+\end{document}
