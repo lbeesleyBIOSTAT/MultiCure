@@ -1,8 +1,9 @@
 Package: MultiCure
-Title: What the Package Does (one line, title case)
+Title: EM Algorithms for Fitting Multistate Cure Models
 Version: 0.0.0.9000
-Authors@R: person("First", "Last", email = "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+Author: Lauren Beesley
+Maintainer: Lauren Beesley <lbeesley@umich.edu>
+Description: This R package provides functions for fitting the multistate cure model (originally proposed in Conlon et al. (2013)) using maximum likelihood methods. Model parameters are estimated using the EM or Monte Carlo EM algorithm. Additional methods provide estimates of state occupancy probabilities over time based on a multistate cure model fit. 
 Depends: R (>= 3.3.0)
 License: What license is it under?
 Encoding: UTF-8
@@ -24,3 +25,6 @@ Imports: survival,
     pracma,
     smcure,
     shiny
+Suggests: knitr,
+    rmarkdown
+VignetteBuilder: knitr
