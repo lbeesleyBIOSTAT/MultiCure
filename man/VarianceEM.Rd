@@ -49,6 +49,12 @@ OUT a matrix containing the following:
 \description{
 The function VarianceEM performs variance estimation for the Multistate Cure Model when the model is fit using the EM Algorithm. Variances are estimated by fitting the multistate cure model (via EM) to bootstrap samples of the data.
 }
-\author{
-Lauren J Beesley, \email{lbeesley@umich.edu}
+\examples{
+attach(SimulateMultiCure(type = "NoMissingness"))
+Cov = data.frame(X1,X2)
+VARS = names(Cov)
+TransCov = list(Trans13 = VARS, Trans24 = VARS, Trans14 = VARS, Trans34 = VARS, PNonCure = VARS)
+datWIDE = data.frame( Y_R, Y_D, delta_R , delta_D, G)
+fit = MultiCure(iternum=100, datWIDE, Cov, ASSUME = "SameHazard", TransCov = TransCov, BASELINE = "weib") 
+OUT = VarianceEM(fit,iternum=20, bootnum=50, datWIDE, Cov, ASSUME = "SameHazard", TransCov, BASELINE = "weib")
 }

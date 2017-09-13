@@ -45,6 +45,3 @@ EST a list containing the estimates for the baseline hazard function (and cumula
 \description{
 The function Baselinehazard_IMP is used to estimate the baseline hazard functions within the MCEM algorithm under COX baseline hazards
 }
-\author{
-Lauren J Beesley, \email{lbeesley@umich.edu}
-}

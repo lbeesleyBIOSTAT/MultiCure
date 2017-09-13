@@ -18,7 +18,7 @@ MultiCure(iternum, datWIDE, Cov, COVIMPUTEFUNCTION = NULL,
 \item delta_R, the recurrence event/censoring indicator
 \item Y_D, the death event/censoring time 
 \item delta_D, the death event/censoring indicator
-\item G, the cure status variable. This takes value 1 for known non-cured, 0 for "known" cured and NA for unknown cure status
+\item G, the cure status variable. This takes value 1 for known non-cured, 0 for "known" cured and NA for unknown cur`e status
 }}
 
 \item{Cov}{A data frame containing the covariates used in the model fit. The columns must be named. Factors must be represented as dummy variables.}
@@ -75,6 +75,11 @@ In order to fit a model with no covariates for one or more of the transitions or
 
 In order to include recurrence time in the model for recurrence -> death, include covariate 'T_R' (initialized to equal the observed recurrence event/censoring time) in both Cov and Trans34 (in TransCov). If performing imputation for unequal follow-up, user must specify COVIMPUTEINITIALIZE and COVIMPUTEFUNCTION to update the values of 'T_R' based on the imputed outcome values.
 }
-\author{
-Lauren J Beesley, \email{lbeesley@umich.edu}
+\examples{
+attach(SimulateMultiCure(type = "NoMissingness"))
+Cov = data.frame(X1,X2)
+VARS = names(Cov)
+TransCov = list(Trans13 = VARS, Trans24 = VARS, Trans14 = VARS, Trans34 = VARS, PNonCure = VARS)
+datWIDE = data.frame( Y_R, Y_D, delta_R , delta_D, G)
+fit = MultiCure(iternum = 100, datWIDE, Cov, ASSUME = "SameHazard", TransCov = TransCov, BASELINE = "weib") 
 }

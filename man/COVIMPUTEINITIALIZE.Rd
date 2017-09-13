@@ -20,6 +20,3 @@ The function COVIMPUTEINITIALIZE will initialize the missing covariate values. A
 \details{
 The example code included in the package initializes missing covariate X2 in the Multistate cure model example
 }
-\author{
-Lauren J Beesley, \email{lbeesley@umich.edu}
-}

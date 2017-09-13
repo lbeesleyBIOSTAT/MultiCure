@@ -18,6 +18,12 @@ VISUALIZEDATA(datWIDE)
 \description{
 This function uses RShiny to plot Kaplan-Meier plots for time to recurrence and time to death. This function can also be used to visualize the occurrence of unequal follow-up and when the recurrence event/censorings and death event/censorings occur.
 }
-\author{
-Lauren J Beesley, \email{lbeesley@umich.edu}
+\examples{
+attach(SimulateMultiCure(type = "NoMissingness"))
+datWIDE = data.frame( Y_R, Y_D, delta_R , delta_D, G)
+VISUALIZEDATA(datWIDE)
+### With Unequal Censoring
+attach(SimulateMultiCure(type = "UnequalCensoring"))
+datWIDE = data.frame( Y_R, Y_D, delta_R , delta_D, G)
+VISUALIZEDATA(datWIDE)
 }

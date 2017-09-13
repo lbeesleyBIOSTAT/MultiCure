@@ -40,6 +40,3 @@ EST a list containing a step function estimate for the CUMULATIVE baseline hazar
 \description{
 The function BaselineHazard_NOIMP is used to estimate the baseline hazard functions within the EM algorithm under COX baseline hazards
 }
-\author{
-Lauren J Beesley, \email{lbeesley@umich.edu}
-}

@@ -4,14 +4,14 @@
 \alias{STATEOCCUPANCYWEIB}
 \title{STATEOCCUPANCYWEIB}
 \usage{
-STATEOCCUPANCYWEIB(times, TransCov, Cov, beta, alpha, scale, shape)
+STATEOCCUPANCYWEIB(times, TransCov, newCov, beta, alpha, scale, shape)
 }
 \arguments{
 \item{times}{number of iterations for the EM or MCEM algorithm}
 
-\item{TransCov}{a list with elements: Trans13, Trans24, Trans14, Trans34, PNonCure. Each list element is a vector containing the names of the variables in Cov to be used in the model for the corresponding transition. 13 is NonCured -> Recurrence, 24 is Cured -> Death, 14 is NonCured -> Death, 34 is Recurrence -> Death. PNonCure contains the names of the covariates for the logistic regression for P(NonCure).}
+\item{TransCov}{a list with elements: Trans13, Trans24, Trans14, Trans34, PNonCure. Each list element is a vector containing the names of the variables in newCov to be used in the model for the corresponding transition. 13 is NonCured -> Recurrence, 24 is Cured -> Death, 14 is NonCured -> Death, 34 is Recurrence -> Death. PNonCure contains the names of the newCovariates for the logistic regression for P(NonCure).}
 
-\item{Cov}{A dataframe with columns corresponding to covariates used in the model fit. The rows should correspond to the covariate values for which we will make our predictions.}
+\item{newCov}{A dataframe with columns corresponding to newCovariates used in the model fit. The rows should correspond to the newCovariate values for which we will make our predictions.}
 
 \item{beta}{Estimate from multistate cure model fit}
 
@@ -24,6 +24,12 @@ STATEOCCUPANCYWEIB(times, TransCov, Cov, beta, alpha, scale, shape)
 \description{
 This function uses RShiny to plot predicted state occupancy probabilities, overall survival probabilities, event-free probabilities, and the transition densities for a particular set of covariate values. These probabilities are estimated based on a Multistate cure model fit with WEIBULL baseline hazards. The estimated probabilities can incorporate only baseline information OR can incorporate baseline information and some followup information after baseline. This function cannot be applied for prediction when recurrence time is included in the model from recurrence to death.
 }
-\author{
-Lauren J Beesley, \email{lbeesley@umich.edu}
+\examples{
+attach(SimulateMultiCure(type = "NoMissingness"))
+Cov = data.frame(X1,X2)
+VARS = names(Cov)
+TransCov = list(Trans13 = VARS, Trans24 = VARS, Trans14 = VARS, Trans34 = VARS, PNonCure = VARS)
+datWIDE = data.frame( Y_R, Y_D, delta_R , delta_D, G)
+fit = MultiCure(iternum = 100, datWIDE, Cov, ASSUME = "SameHazard", TransCov = TransCov, BASELINE = "weib")
+STATEOCCUPANCYWEIB(times = seq(0,100,1), TransCov, newCov = data.frame(X1 = 0, X2 = 0), beta = fit[[1]], alpha = fit[[2]], scale = fit[[3]], shape = fit[[4]]) 
 }

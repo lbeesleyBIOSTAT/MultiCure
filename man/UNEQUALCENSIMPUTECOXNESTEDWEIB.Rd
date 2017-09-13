@@ -40,6 +40,3 @@ a list containing
 \description{
 The function UNEQUALCENSIMPUTECOXNESTEDWEIB will perform an imputation algorithm to handle unequal follow-up for recurrence and death. This function can be applied when we assume COX baseline hazards. Even though the main multistate cure model assumes Cox baseline hazards, this function (temporarily) uses Weibull baseline hazard assumptions to perform imputation of Y_R and delta_R. This function makes use of a rejection sampling algorithm.
 }
-\author{
-Lauren J Beesley, \email{lbeesley@umich.edu}
-}

@@ -48,6 +48,8 @@ ProperDraws_MC(datWIDE, Cov, CovImp, GImp, YRImp, deltaRImp,
 \item{BASELINE}{This variable indicates the assumptions about the baseline hazard form. This can take values 'weib' and 'cox'}
 
 \item{PENALTY}{This variable indicates whether we are using any variable selection in the model fitting. Right now, the options are 'None' (no variable selection), 'Ridge' (ridge regression for all covariates in all models) and 'Lasso' (lasso for all covariates in all models, only implemented for Cox baseline hazards)}
+
+\item{POSTITER}{This variable indicates the number of post-processing steps should be done. The default is 5.}
 }
 \value{
 OUT a matrix containing the following:
@@ -64,6 +66,12 @@ The function ProperDraws_MC is used to obtain "proper" imputations of the missin
 \details{
 In order to output the imputed data from MultiCure, one must use the trace = TRUE option in MultiCure.
 }
-\author{
-Lauren J Beesley, \email{lbeesley@umich.edu}
+\examples{
+attach(SimulateMultiCure(type = "UnequalCensoring"))
+Cov = data.frame(X1,X2)
+VARS = names(Cov)
+TransCov = list(Trans13 = VARS, Trans24 = VARS, Trans14 = VARS, Trans34 = VARS, PNonCure = VARS)
+datWIDE = data.frame( Y_R, Y_D, delta_R , delta_D, G)
+fit = MultiCure(iternum = 100, datWIDE, Cov, ASSUME = "SameHazard", TransCov = TransCov, BASELINE = "weib", IMPNUM = 10) ### Note: This will take a moment
+Proper = ProperDraws_MC(datWIDE,Cov, CovImp = fit[[9]], GImp = fit[[10]], YRImp = fit[[11]], deltaRImp = fit[[12]], ASSUME = "SameHazard", TransCov = TransCov, BASELINE = "weib") ### Note: This will take a moment
 }

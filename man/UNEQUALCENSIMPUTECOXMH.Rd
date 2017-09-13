@@ -41,6 +41,3 @@ a list containing
 \description{
 The function UNEQUALCENSIMPUTECOXMH will perform an imputation algorithm to handle unequal follow-up for recurrence and death. This function can be applied when we assume COX baseline hazards. This function performs imputation using a Metropolis-Hastings algorithm. The proposal distribution is Uniform with bounds such that the target kernel is nonzero.
 }
-\author{
-Lauren J Beesley, \email{lbeesley@umich.edu}
-}

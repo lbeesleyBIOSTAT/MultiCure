@@ -37,6 +37,3 @@ The function COVIMPUTEFUNCTION creates a single imputed version of the covariate
 \details{
 The example code included in the package imputes missing covariate X2 in the Multistate cure model example. In the example code, a normal covariate is imputed using an approach similar to SMC-FCS in Bartlett et al. (2014) and Metropolis-Hastings methods. In practice, this function can use any imputation method the user desires. For example, the user-written function can call 'mice' in R to perform the imputation.
 }
-\author{
-Lauren J Beesley, \email{lbeesley@umich.edu}
-}

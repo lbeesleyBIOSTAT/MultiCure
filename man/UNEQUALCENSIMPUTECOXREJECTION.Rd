@@ -43,6 +43,3 @@ The function UNEQUALCENSIMPUTECOXREJECTION will perform an imputation algorithm 
 \details{
 This function cannot be applied when 'T_R' is included in the model for Recurrence -> Death. In this case, use one of the following functions instead UNEQUALCENSIMPUTECOXNESTEDWEIBULL, UNEQUALCENSIMPUTECOXMH or UNEQUALCENSIMPUTECOXINVERSION.
 }
-\author{
-Lauren J Beesley, \email{lbeesley@umich.edu}
-}
