@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015) (preloaded format=pdflatex 2015.5.24)  13 SEP 2017 14:23
+This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015) (preloaded format=pdflatex 2015.5.24)  14 SEP 2017 10:05
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -711,10 +711,10 @@ LaTeX Font Info:    Font shape `OT1/pcr/m/it' in size <10> not available
 (Font)              Font shape `OT1/pcr/m/sl' tried instead on input line 126.
  [4] [5] [6] [7] [8] [9] [10] [11] (./Example.aux) ) 
 Here is how much of TeX's memory you used:
- 16132 strings out of 493089
- 301173 string characters out of 6134842
+ 16133 strings out of 493089
+ 301185 string characters out of 6134842
  506638 words of memory out of 5000000
- 19304 multiletter control sequences out of 15000+600000
+ 19305 multiletter control sequences out of 15000+600000
  10350 words of font info for 39 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  55i,7n,54p,691b,1042s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -728,7 +728,7 @@ ublic/amsfonts/cm/cmti12.pfb></usr/local/texlive/2015/texmf-dist/fonts/type1/ur
 w/courier/ucrb8a.pfb></usr/local/texlive/2015/texmf-dist/fonts/type1/urw/courie
 r/ucrr8a.pfb></usr/local/texlive/2015/texmf-dist/fonts/type1/urw/courier/ucrro8
 a.pfb>
-Output written on Example.pdf (11 pages, 107657 bytes).
+Output written on Example.pdf (11 pages, 107684 bytes).
 PDF statistics:
  76 PDF objects out of 1000 (max. 8388607)
  54 compressed objects within 1 object stream
