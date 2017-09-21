@@ -11,7 +11,7 @@ MStep_WEIB = function(datWIDE, Cov, ImputeDat, ASSUME, TransCov, NEEDTOIMPUTE, P
 	}else{
 		datLONG = CreateLong(datWIDE, Cov)
 	}
-	datLONG_sub = datLONG[datLONG$w != 0,]		
+	datLONG_sub = datLONG[datLONG$w != 0 & datLONG$time != 0,]		
 	### Transform the covariates into the proper format
 	Cov_long = subset(datLONG_sub, select = -c(id, from, to, trans, Tstart, Tstop, time, status,w))
 	Cov_long_13 = data.frame(Cov_long[,TransCov$Trans13])
@@ -46,7 +46,7 @@ MStep_WEIB = function(datWIDE, Cov, ImputeDat, ASSUME, TransCov, NEEDTOIMPUTE, P
 	mscale13 = exp(-coef(fit13)[1]*mshape13)
 	coef13 = -coef(fit13)[2:length(coef(fit13))]*mshape13	
 	fit34 = survival::survreg(survival::Surv(datLONG_sub$time,datLONG_sub$status)~TRANS(as.matrix(Cov_long_34)),
-		  	weights = datLONG_sub$w, dist = 'weib', subset = (datLONG_sub$trans == 4))
+		  	weights = datLONG_sub$w, dist = 'weib', subset = (datLONG_sub$trans == 4))				  	  	
 	mshape34 = 1/fit34$scale
 	mscale34 = exp(-coef(fit34)[1]*mshape34)
 	coef34 = -coef(fit34)[2:length(coef(fit34))]*mshape34			
@@ -151,7 +151,7 @@ MStep_COX = function(datWIDE, Cov, ImputeDat, ASSUME, TransCov, NEEDTOIMPUTE, PE
 	}else{
 		datLONG = CreateLong(datWIDE, Cov)
 	}
-	datLONG_sub = datLONG[datLONG$w != 0,]	
+	datLONG_sub = datLONG[datLONG$w != 0 & datLONG$time != 0,]
 	### Transform the covariates into the proper format
 	Cov_long = subset(datLONG_sub, select = -c(id, from, to, trans, Tstart, Tstop, time, status,w))
 	Cov_long_13 = data.frame(Cov_long[,TransCov$Trans13])
