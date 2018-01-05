@@ -274,7 +274,7 @@ MultiCure = function(iternum, datWIDE, Cov, COVIMPUTEFUNCTION = NULL,  COVIMPUTE
 			#l_save = c(l_save, LogLikObs_WEIBMCEM(datWIDE, ImputeDat, beta, alpha, scale, shape,TransCov))	
 			
 			iter = iter + 1
-			gc() #NEW
+			#gc() #NEW
 		}#end while loop	
 	}
 	
@@ -313,7 +313,7 @@ MultiCure = function(iternum, datWIDE, Cov, COVIMPUTEFUNCTION = NULL,  COVIMPUTE
 			#l_save = c(l_save, LogLikObs_COXMCEM(datWIDE, ImputeDat, beta, alpha,TransCov, ASSUME))
 			
 			iter = iter + 1
-			gc() #NEW
+			#gc() #NEW
 		}#end while loop
 	}
 
