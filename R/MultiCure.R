@@ -115,7 +115,10 @@ MultiCure = function(iternum, datWIDE, Cov, COVIMPUTEFUNCTION = NULL,  COVIMPUTE
 	####################
 	### Initialize p ### (EM Algorithm)
 	####################
-	fitTemp = stats::glm(datWIDE$delta_R~.,data = Cov, family = 'binomial') 
+	if(NEEDTOIMPUTE){	
+		CovTEMP =  COVIMPUTEINITIALIZE(Cov, CovMissing)
+	}else{CovTEMP = Cov}
+	fitTemp = stats::glm(datWIDE$delta_R~.,data = CovTEMP, family = 'binomial') 
 	predictions = as.numeric(stats::predict(fitTemp,type = 'response'))
 	datWIDE$p = rep(NA,length(datWIDE[,1]))
 	datWIDE$p = ifelse(is.na(datWIDE$G), predictions, datWIDE$G)	
