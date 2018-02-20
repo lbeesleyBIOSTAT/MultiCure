@@ -47,6 +47,11 @@
 #' @export
 
 VarianceMCEM_BOOT = function(fit,bootnum, datWIDE, CovImp, GImp, YRImp, deltaRImp, ASSUME, TransCov, BASELINE, PENALTY = 'None'){			
+	
+	########################################
+	### Initializing, Defining Functions ###
+	########################################
+	
 	ASSUME = match.arg(ASSUME, choices = c('SameHazard', 'AllSeparate', 'SameBaseHaz', 'ProportionalHazard'))
 	BASELINE = match.arg(BASELINE, choices = c('weib','cox'))
 	PENALTY = match.arg(PENALTY, choices = c('None', 'Ridge', 'Lasso'))
@@ -78,6 +83,11 @@ VarianceMCEM_BOOT = function(fit,bootnum, datWIDE, CovImp, GImp, YRImp, deltaRIm
 	IMPNUM = length(CovImp)
 	SAVE_VAR = c()
 	SAVE_PARAM = c()
+	
+	##########################################
+	### Fitting Model to Bootstrap Samples ###
+	##########################################
+	
 	for(i in 1:IMPNUM){
 		CovImpTEMP = CovImp[[i]]
 		datWIDETEMP = datWIDE
@@ -87,6 +97,7 @@ VarianceMCEM_BOOT = function(fit,bootnum, datWIDE, CovImp, GImp, YRImp, deltaRIm
 		datWIDETEMP = subset(datWIDETEMP, select = c(Y_R, Y_D, delta_R, delta_D, G))
 		DAT = data.frame(datWIDETEMP, CovImpTEMP)
 		BOOT = boot::boot(data = DAT, statistic = WRAPPERFUNC, R = bootnum)
+			### Guarding against non-converging bootstrap samples
 		BOOT$t = ifelse(abs(BOOT$t)>5, matrix(NA,ncol = ncol(BOOT$t), nrow = nrow(BOOT$t)), BOOT$t)
 		SDs = apply(BOOT$t,2,sd, na.rm=T)
 		MEANS = apply(BOOT$t,2,mean, na.rm=T)
@@ -94,7 +105,16 @@ VarianceMCEM_BOOT = function(fit,bootnum, datWIDE, CovImp, GImp, YRImp, deltaRIm
 		SAVE_VAR = rbind(SAVE_VAR,(SDs)^2)
 		print(paste('Finished Imputation', i, sep = ' '))
 	}
+	
+	###########################
+	### Apply Rubin's Rules ###
+	###########################
 	OUT = RubinMe(means = t(SAVE_PARAM), vars = t(SAVE_VAR), impNum =IMPNUM)
+	
+	##############
+	### Return ###
+	##############
+	
 	if(ASSUME == 'ProportionalHazard'){
 		TransCov$Trans14 = c(TransCov$Trans14, 'INT')
 	}

@@ -34,7 +34,10 @@ SimulateMultiCure = function(type = 'NoMissingness'){
 	censoringInterval = c(10,80) 
 	cureCutoff = 50 #Assume subjects still at risk after 50 are cured
 	
-	#Parameter Values
+	########################
+	### Parameter Values ###
+	########################
+	
 	beta_24 = c(0.5,0.5)
 	beta_14 = c(0.5,0.5)
 	beta_34 = c(0.5,0.5)
@@ -53,19 +56,31 @@ SimulateMultiCure = function(type = 'NoMissingness'){
 	shape_C = 1.5
 	C = Y_R = Y_D = delta_R = delta_D = X1 = X2 = T_14 = T_13 = T_24 = T_34 = G = GTrue = X2Missing = matrix(NA,Nobs,1)
 	
+	###########################
 	### Generate Covariates ###
+	###########################
+	
 	Z = MASS::mvrnorm(n=Nobs, mu = c(0,0), Sigma = cbind(c(1, 0.5), c(0.5, 1)))
 	X1 = Z[,1]
 	X2 = Z[,2]
 	
-	### Generate Cure Status
+	############################
+	### Generate Cure Status ###
+	############################
+	
 	Prob = expit(alpha_NC[1] + alpha_NC[2]*X1 + alpha_NC[3]*X2)
 	GTrue = sapply(Prob, mySample) 
 	
-	### Generate Censoring Time
+	###############################
+	### Generate Censoring Time ###
+	###############################
+	
 	C = runif(n=Nobs, min=censoringInterval[1], max=censoringInterval[2])
 	
-	### Generate Outcomes
+	#########################
+	### Generate Outcomes ###
+	#########################
+	
 	XB_14 = beta_14[1]*X1 + beta_14[2]*X2
 	XB_13 = beta_13[1]*X1 + beta_13[2]*X2
 	XB_34 = beta_34[1]*X1 + beta_34[2]*X2
@@ -116,12 +131,19 @@ SimulateMultiCure = function(type = 'NoMissingness'){
 		}
 	}
 	
-	### Impose Covariate Missingness        
+	####################################
+	### Impose Covariate Missingness ### 
+	####################################
+     
 	missP2 = rep(0.3, Nobs)
 	NmissInd = sapply(missP2, mySample) 
 	X2Miss = ifelse(NmissInd == 1, rep(NA,Nobs), X2)
 	
-	### Impose Unequal Follow-up (Assume first 500 subjects have equal censoring. Early censoring is the minimum of the censoring time for death--perhaps administrative censoring-- and a random dropout rate )
+	################################
+	### Impose Unequal Follow-up ###
+	################################
+	
+	#(Assume first 500 subjects have equal censoring. Early censoring is the minimum of the censoring time for death--perhaps administrative censoring-- and a random dropout rate )
 	U = runif(n=Nobs, min=0, max=1)
 	temp = runif(n=Nobs, min=10, max=40)
 	ID = c(1:Nobs)
@@ -129,8 +151,10 @@ SimulateMultiCure = function(type = 'NoMissingness'){
 	delta_R_early = ifelse(Y_R >= C_early, rep(0,Nobs), delta_R)
 	Y_R_early = ifelse(Y_R >= C_early, C_early, Y_R)
 	
+	############################
+	### Observed Cure Status ###
+	############################
 	
-	### Observed Cure Status
 	G = ifelse(delta_R==1, 1, ifelse(Y_D>cureCutoff & Y_R>cureCutoff & delta_R==0, 0, NA))
 	G_early = ifelse(delta_R_early==1, 1, ifelse(Y_D>cureCutoff & Y_R_early>cureCutoff & delta_R_early==0, 0, NA))
 

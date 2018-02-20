@@ -173,3 +173,163 @@ BaselineHazard_NOIMP = function(datWIDE, Cov, beta, alpha, TransCov, ASSUME, p){
 
 
 
+
+
+####################################################
+### Functions called within Baselinehazard_NOIMP ###
+####################################################
+
+
+
+ #' @export
+
+
+Baseline_hazard_iEM = function(TIME,Y,d,w,XB){
+	at_risk = which(Y >= TIME)
+	had_event = which(Y == TIME & d == 1)
+	hazard = ifelse(sum(w[had_event]) ==0, 0, sum(w[had_event]) /sum(w[at_risk]*exp(XB[at_risk])))
+	return(hazard)
+}
+
+
+ #' @export
+
+Baseline_HazardEM = function(Y,d,w,XB){
+	event_times = sort(unique(Y[d==1]))	
+	hazard_save = sapply(event_times, Baseline_hazard_iEM, Y,d,w,XB)
+	Hazard = cumsum(hazard_save)
+	return(data.frame(event_times, Hazard, hazard = hazard_save))
+}
+#' @export
+
+ 
+Baseline_hazardSEPARATE2414_iEM = function(TIME,Y,d,w,wcomp, XB1, XB2){
+	at_risk = which(Y >= TIME)
+	had_event = which(Y == TIME & d == 1)
+	hazard = ifelse(sum(w[had_event]+wcomp[had_event]) == 0, 0,(sum(w[had_event]+wcomp[had_event])) /(sum(w[at_risk]*exp(XB1[at_risk])) + sum(wcomp[at_risk]*exp(XB2[at_risk])))  )
+	return(hazard)
+}
+
+#' @export
+
+ 
+Baseline_HazardSEPARATE2414EM = function(Y,d,w, wcomp ,XB1,XB2){
+	event_times = sort(unique(Y[d==1]))	
+	hazard_save = sapply(event_times, Baseline_hazardSEPARATE2414_iEM, Y,d,w, wcomp ,XB1, XB2)
+	Hazard = cumsum(hazard_save)
+	return(data.frame(event_times, Hazard, hazard = hazard_save))
+}
+
+
+
+
+
+##################################################
+### Functions called within Baselinehazard_IMP ###
+##################################################
+
+
+
+### These next two functions estimate baseline hazards for a single transition ###
+
+ #' @export
+Baseline_hazard_i = function(TIME,Y,d,w,XB, cutoffs){
+	index = which(cutoffs == TIME)
+	#MAXTIME = max(Y)
+	TIME_LOWER = ifelse(index == 1, 0, cutoffs[index-1])
+	TIME_UPPER = cutoffs[index]
+	
+	#Interval open on right, closed on left [t_index-1, t_index)
+	at_risk = which(Y >= TIME_LOWER)
+	had_event = which(Y >= TIME_LOWER & Y < TIME_UPPER & d==1)
+
+	NUM = sum(w[had_event])
+	DENOM = sum(  (  w*exp(XB)*(pmin(Y,rep(TIME_UPPER, length(Y)))-TIME_LOWER)  )[at_risk[!(at_risk %in% had_event)] ])# +  sum((  w*exp(XB)*(TIME_UPPER-TIME_LOWER)  )[had_event]  )
+	hazard = ifelse(NUM==0, 0, NUM/DENOM )
+	hazard = ifelse(is.infinite(hazard),0,hazard)
+	return(hazard)
+}
+ 
+#' @export
+
+Baseline_hazard = function(Y,d,w,XB, cuts = 'events'){	
+	MAXTIME = max(Y)
+	Y = Y[w!=0]
+	d = d[w!=0]
+	XB = XB[w!=0]
+	w = w[w!=0]	
+	event_times = c(sort(unique(Y[d==1])),MAXTIME)
+	if(cuts == 'events'){
+		cutoffs = event_times
+	}else if(cuts == 'grouped'){
+		toosmall = which(diff(event_times)<0.005) #was 0.5
+		toosmall = toosmall + 1
+		if(length(toosmall)==0){
+			cutoffs = event_times
+		}else{
+			cutoffs = event_times[-toosmall]
+		}
+	}
+	options(warn = -1)	
+	hazard_save = sapply(cutoffs, Baseline_hazard_i, Y,d,w, XB, cutoffs)
+	options(warn = 1)
+	return(data.frame(lower = c(0,cutoffs[1:(length(cutoffs)-1)]), upper = cutoffs, hazard = hazard_save))
+}
+
+
+
+### These next two functions estimate baseline hazard for the 2->4 and 1->4 transitions when they have the same baselines and perhaps different X*Beta ##
+
+#' @export
+Baseline_hazardSEPARATE2414 = function(Y,d,w,wcomp,XB1, XB2, cuts = 'events'){
+	MAXTIME = max(Y)
+	event_times = c(sort(unique(Y[d==1 & w!=0])),MAXTIME)
+	if(cuts == 'events'){
+		cutoffs = event_times
+	}else if(cuts == 'grouped'){
+		toosmall = which(diff(event_times)<0.005)#was 0.5
+		toosmall = toosmall + 1
+		if(length(toosmall)==0){
+			cutoffs = event_times
+		}else{
+			cutoffs = event_times[-toosmall]
+		}	
+	}
+	options(warn = -1)	
+	hazard_save = sapply(cutoffs, Baseline_hazardSEPARATE2414_i, Y,d,w,wcomp, XB1, XB2, cutoffs)
+	options(warn = 1)
+	return(data.frame(lower = c(0,cutoffs[1:(length(cutoffs)-1)]), upper = cutoffs, hazard = hazard_save))
+}
+
+ #' @export
+
+Baseline_hazardSEPARATE2414_i = function(TIME,Y,d,w, wcomp,XB1, XB2, cutoffs){
+	index = which(cutoffs == TIME)
+	
+	TIME_LOWER = ifelse(index == 1, 0, cutoffs[index-1])
+	TIME_UPPER = cutoffs[index]
+	
+	#Interval open on right, closed on left [t_index-1, t_index)
+	at_risk = which(Y >= TIME_LOWER)
+	had_event = which(Y >= TIME_LOWER & Y < TIME_UPPER & d==1)
+
+	NUM = sum(w[had_event]+wcomp[had_event])
+	DENOM = sum(  (  w*exp(XB1)*(pmin(Y,rep(TIME_UPPER, length(Y)))-TIME_LOWER)  )[at_risk[!(at_risk %in% had_event)]] +
+			 wcomp*exp(XB2)*(pmin(Y,rep(TIME_UPPER, length(Y)))-TIME_LOWER)[at_risk[!(at_risk %in% had_event)]]  )  
+			#+ sum(  (  w*exp(XB1)*(TIME_UPPER-TIME_LOWER)  )[had_event] +
+			# wcomp*exp(XB2)*(TIME_UPPER-TIME_LOWER)[had_event]  ) 
+	hazard = ifelse(NUM==0, 0, NUM/DENOM )
+	hazard = ifelse(is.infinite(hazard),0,hazard)
+	return(hazard)
+}
+
+
+
+### This function estimates the cumulative baseline hazard given the baseline hazard function
+#' @export
+
+Baseline_Hazard = function(TIME, Basehaz){
+	j = max(which(Basehaz[,1]<=TIME))
+	return(Basehaz$Hazard_lower[j] + (TIME-Basehaz$lower[j])*Basehaz$hazard[j])
+}
+

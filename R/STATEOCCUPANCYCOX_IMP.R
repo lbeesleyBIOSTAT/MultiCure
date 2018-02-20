@@ -68,6 +68,11 @@ STATEOCCUPANCYCOX_IMP <- function(times, TransCov, newCov, beta, alpha, Basehaz1
 			 	my_i <- i
     				plotname <- paste("Subject", my_i, sep="")
 				output[[plotname]]   <- renderPlot({
+					
+					#######################################
+					### Initialize and Define Functions ###
+					#######################################
+					
 					newCovTEMP = newCov[my_i,]				
 					Prob1Save = rep(0,length(times))
 					Prob2Save = rep(0,length(times))
@@ -128,6 +133,11 @@ STATEOCCUPANCYCOX_IMP <- function(times, TransCov, newCov, beta, alpha, Basehaz1
 					BasehazFun_14 = stepfun(x= Basehaz14[,2], y = c(Basehaz14[,3],0), right = F)
 					BasehazFun_34 = stepfun(x= Basehaz34[,2], y = c(Basehaz34[,3],0), right = F)												
 
+
+					#######################################################
+					### Estimate and Plot State Occupancy Probabilities ###
+					#######################################################
+					
   					cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 					if(input$plottype=='S'){
 						changePoints1 = sort(unique(c(0,Basehaz13[,1], Basehaz24[,1], Basehaz14[,1], max(times))))

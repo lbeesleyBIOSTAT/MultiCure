@@ -51,6 +51,11 @@
 
 ProperDraws_MC = function( datWIDE,Cov,CovImp, GImp, YRImp, deltaRImp, COVIMPUTEFUNCTION = NULL,  COVIMPUTEINITIALIZE = NULL,
 			UNEQUALCENSIMPUTE = NULL, ASSUME = 'SameHazard', TransCov, BASELINE, PENALTY = 'None',POSTITER = 5){
+	
+	##################
+	### Initialize ###
+	##################
+	
 	Nobs = length(datWIDE[,1])
 	ASSUME = match.arg(ASSUME, choices = c('SameHazard', 'AllSeparate', 'SameBaseHaz',  'ProportionalHazard'))
 	BASELINE = match.arg(BASELINE, choices = c('weib','cox'))
@@ -76,10 +81,13 @@ ProperDraws_MC = function( datWIDE,Cov,CovImp, GImp, YRImp, deltaRImp, COVIMPUTE
 	FunTEMP = function(x){
 			return(x[whichboot,])
 	}
-		
-	#################################
-	### Obtain Proper Imputations ###	
-	#################################
+
+	
+	###############################################
+	### Initialize Missing Values for YRImpSAVE ###
+	###############################################
+	
+	# This is only needed for unequal censoring imputation via Metropolis-Hastings (OutcomeImputationCOXMH)
 	YRImpSAVE = YRImp
 	for(i in 1:IMPNUM){
 		TAU_R = max(datWIDE$Y_R[datWIDE$delta_R==1])
@@ -90,16 +98,32 @@ ProperDraws_MC = function( datWIDE,Cov,CovImp, GImp, YRImp, deltaRImp, COVIMPUTE
 		U = apply(cbind(MIN, MAX),1, mHPropose) 
 		YRImpSAVE[IMPUTEYR,i] = ifelse(deltaRImp[IMPUTEYR,i]==1, YRImp[IMPUTEYR,i], U)	
 	}
+	
+			
+	#################################
+	### Obtain Proper Imputations ###	
+	#################################
+	
 	iter = 1
 	while(iter <= POSTITER)
 	{
 		for(i in 1:IMPNUM){
+			
+			################################################
+			### Draw Bootstrap Sample of Imputed Dataset ###
+			################################################
+			
 			whichboot = sample(x=c(1:Nobs), size = Nobs, replace = TRUE, prob = rep(1/Nobs, Nobs))
 			ImputeDatBOOT = list(UnequalCens=UnequalCens[whichboot], CovMissing=CovMissing[whichboot,], 
 							CovImp= list( CovImp[[i]][whichboot,]), GImp= matrix(GImp[whichboot,i]), 
 							YRImp= matrix(YRImp[whichboot,i]), deltaRImp= matrix(deltaRImp[whichboot,i]), YRImpSAVE = matrix(YRImpSAVE[whichboot,i])  )	
 			ImputeDat = list(UnequalCens= UnequalCens, CovMissing= CovMissing, CovImp  = list(CovImp[[i]]), GImp  = matrix(GImp[,i]), YRImp  = matrix(YRImp[,i]), 
 							deltaRImp  = matrix(deltaRImp[,i]), YRImpSAVE = matrix(YRImpSAVE[,i]))		
+			
+			########################################################
+			### Fit model to bootstrap sample and then re-impute ###
+			########################################################
+			
 			if(BASELINE == 'weib'){		
 				param = MStep_WEIB(datWIDE = datWIDE[whichboot,], Cov = Cov[whichboot,], ImputeDat = ImputeDatBOOT, ASSUME, TransCov, NEEDTOIMPUTE, PENALTY)
 				beta = param[[1]]

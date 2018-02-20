@@ -42,6 +42,11 @@
 #' @export
 
 VarianceEM = function(fit,iternum, bootnum, datWIDE, Cov, ASSUME, TransCov, BASELINE, PENALTY = 'None'){				
+	
+	########################################
+	### Initializing, Defining Functions ###
+	########################################
+	
 	if(BASELINE == 'weib'){
 		PARAMINIT = list(beta = fit[[1]], alpha = fit[[2]], scale = fit[[3]], shape = fit[[4]])		
 	}else{
@@ -69,13 +74,22 @@ VarianceEM = function(fit,iternum, bootnum, datWIDE, Cov, ASSUME, TransCov, BASE
 	datWIDETEMP = subset(datWIDE, select = c(Y_R, Y_D, delta_R, delta_D, G))
 	#sum(datWIDETEMP$Y_R<datWIDETEMP$Y_D & datWIDETEMP$delta_R == 0 & is.na(datWIDETEMP$G))
 	DAT = data.frame(datWIDETEMP, Cov)
+	
+	##########################################
+	### Fitting Model to Bootstrap Samples ###
+	##########################################
 	BOOT = boot::boot(data = DAT, statistic = WRAPPERFUNC, R = bootnum)
 	SDs = apply(BOOT$t,2,sd, na.rm=T)
 	SAVE_VAR = (SDs)^2
-
+		### Guarding against non-converging bootstrap samples 
 	BOOT$t_sub = ifelse(abs(BOOT$t)>5 | is.na(BOOT$t), matrix(NA,ncol = ncol(BOOT$t), nrow = nrow(BOOT$t)), BOOT$t)
 	SDs_sub = apply(BOOT$t_sub,2,sd, na.rm=T)
 	SAVE_VAR_sub = (SDs_sub)^2
+	
+	##############
+	### Return ###
+	##############
+	
 	if(ASSUME == 'ProportionalHazard'){
 		TransCov$Trans14 = c(TransCov$Trans14, 'INT')
 	}

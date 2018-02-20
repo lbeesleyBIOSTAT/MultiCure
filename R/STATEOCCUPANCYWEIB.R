@@ -67,6 +67,11 @@ STATEOCCUPANCYWEIB <- function(times, TransCov, newCov, beta, alpha, scale, shap
 			 	my_i <- i
     				plotname <- paste("Subject", my_i, sep="")
 				output[[plotname]]   <- renderPlot({
+					
+					#######################################
+					### Initialize and Define Functions ###
+					#######################################
+					
 					newCovTEMP = newCov[my_i,]				
 					Prob1Save = rep(0,length(times))
 					Prob2Save = rep(0,length(times))
@@ -127,6 +132,11 @@ STATEOCCUPANCYWEIB <- function(times, TransCov, newCov, beta, alpha, scale, shap
 					if(input$RecurTime > input$CurTime & input$RecurEvent == TRUE){
 						stop('Recurrence time must be at or before current time')
 					}
+					
+					##############################################
+					### Estimate State Occupancy Probabilities ###
+					##############################################
+					
 					if(input$CurTime == 0 & input$RecurEvent==FALSE){
 						for(k in 1:length(times))
 						{
@@ -176,6 +186,11 @@ STATEOCCUPANCYWEIB <- function(times, TransCov, newCov, beta, alpha, scale, shap
 					}
 				#2, recurred and alive; 1, recurred and died; 4, died without recurrence; 3, alive without recurrence
 		
+		
+					################
+					### Plotting ###
+					################
+					
   					cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 					if(input$plottype=='S'){
 						SUBSET = which(times>=input$CurTime)

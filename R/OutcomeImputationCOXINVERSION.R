@@ -32,6 +32,11 @@
 
 
 UNEQUALCENSIMPUTECOXINVERSION = function(datWIDE, beta, alpha, ImputeDat, TransCov){
+	
+	
+	##################
+	### Initialize ###
+	##################
 	UnequalCens = ImputeDat[[1]]
 	CovImp = as.data.frame(ImputeDat[[3]])
 	GImp = ImputeDat[[4]]
@@ -78,6 +83,11 @@ UNEQUALCENSIMPUTECOXINVERSION = function(datWIDE, beta, alpha, ImputeDat, TransC
 
 	INDICES = which(is.na(YRImp))
 	
+	
+	########################
+	### Define Functions ###
+	########################
+	
 	if('T_R' %in% TransCov$Trans34){
 		fdCOX<-function(v, m){	
 			XB_beta34MOD = as.numeric(beta[TRANS==4][TransCov$Trans34!= 'T_R'] %*% t(cbind(CovImp[[i]][m,TransCov$Trans34[TransCov$Trans34!='T_R']])))
@@ -109,6 +119,10 @@ UNEQUALCENSIMPUTECOXINVERSION = function(datWIDE, beta, alpha, ImputeDat, TransC
 		return(ZERO)
 	}	
 
+	##################
+	### Impute T_R ### (By inverting the survival function of T_R)
+	##################
+	
 	DrawVALWRAPPER = function(s){
 		m = INDICES[s]	
 		U1 = runif(n=1, min = 0, max = 1)

@@ -1,6 +1,10 @@
  
 ### These functions perform either the E step or Imputation Step of the EM or MonteCarlo EM (respectively) algorithms
 
+
+########################################################
+### E-Step for Monte Carlo EM with Weibull Baselines ### (Imputation Step)
+########################################################
 #' @export
 
 EStepWEIB_MC = function(datWIDE, beta, alpha, scale, shape, ImputeDat, COVIMPUTEFUNCTION, 
@@ -127,120 +131,13 @@ EStepWEIB_MC = function(datWIDE, beta, alpha, scale, shape, ImputeDat, COVIMPUTE
 }
 
 
- #' @export
-
-Baseline_hazard_i = function(TIME,Y,d,w,XB, cutoffs){
-	index = which(cutoffs == TIME)
-	#MAXTIME = max(Y)
-	TIME_LOWER = ifelse(index == 1, 0, cutoffs[index-1])
-	TIME_UPPER = cutoffs[index]
-	
-	#Interval open on right, closed on left [t_index-1, t_index)
-	at_risk = which(Y >= TIME_LOWER)
-	had_event = which(Y >= TIME_LOWER & Y < TIME_UPPER & d==1)
-
-	NUM = sum(w[had_event])
-	DENOM = sum(  (  w*exp(XB)*(pmin(Y,rep(TIME_UPPER, length(Y)))-TIME_LOWER)  )[at_risk[!(at_risk %in% had_event)] ])# +  sum((  w*exp(XB)*(TIME_UPPER-TIME_LOWER)  )[had_event]  )
-	hazard = ifelse(NUM==0, 0, NUM/DENOM )
-	hazard = ifelse(is.infinite(hazard),0,hazard)
-	return(hazard)
-}
- 
-#' @export
-
-Baseline_hazard = function(Y,d,w,XB, cuts = 'events'){	
-	MAXTIME = max(Y)
-	Y = Y[w!=0]
-	d = d[w!=0]
-	XB = XB[w!=0]
-	w = w[w!=0]	
-	event_times = c(sort(unique(Y[d==1])),MAXTIME)
-	if(cuts == 'events'){
-		cutoffs = event_times
-	}else if(cuts == 'grouped'){
-		toosmall = which(diff(event_times)<0.005) #was 0.5
-		toosmall = toosmall + 1
-		if(length(toosmall)==0){
-			cutoffs = event_times
-		}else{
-			cutoffs = event_times[-toosmall]
-		}
-	}
-	options(warn = -1)	
-	hazard_save = sapply(cutoffs, Baseline_hazard_i, Y,d,w, XB, cutoffs)
-	options(warn = 1)
-	return(data.frame(lower = c(0,cutoffs[1:(length(cutoffs)-1)]), upper = cutoffs, hazard = hazard_save))
-}
-#' @export
-Baseline_Hazard_Slow = function(TIME,Basehaz){
-	TIME_LOWER = Basehaz[,1]
-	TIME_UPPER = Basehaz[,2]
-	TIME_LOWER = c(TIME_LOWER,Basehaz[length(Basehaz[,2]),2])
-	TIME_UPPER = c(TIME_UPPER,10^6)
-	HAZARD = c(Basehaz[,3],0)
-	#data.frame(TIME_LOWER, TIME_UPPER, HAZARD)
-	j = c(1:length(TIME_LOWER)) #which interval are we in
-	Li = j[TIME_LOWER <= TIME & TIME_UPPER > TIME] #interval is closed on the left and open on the right
-	Hazard  = sum(  (HAZARD*(TIME_UPPER-TIME_LOWER))[which(j <= (Li-1))]) + (HAZARD*(TIME-TIME_LOWER))[which(j==Li)]
-	return(Hazard)
-}
-
- #' @export
-
-Baseline_hazardSEPARATE2414_i = function(TIME,Y,d,w, wcomp,XB1, XB2, cutoffs){
-	index = which(cutoffs == TIME)
-	
-	TIME_LOWER = ifelse(index == 1, 0, cutoffs[index-1])
-	TIME_UPPER = cutoffs[index]
-	
-	#Interval open on right, closed on left [t_index-1, t_index)
-	at_risk = which(Y >= TIME_LOWER)
-	had_event = which(Y >= TIME_LOWER & Y < TIME_UPPER & d==1)
-
-	NUM = sum(w[had_event]+wcomp[had_event])
-	DENOM = sum(  (  w*exp(XB1)*(pmin(Y,rep(TIME_UPPER, length(Y)))-TIME_LOWER)  )[at_risk[!(at_risk %in% had_event)]] +
-			 wcomp*exp(XB2)*(pmin(Y,rep(TIME_UPPER, length(Y)))-TIME_LOWER)[at_risk[!(at_risk %in% had_event)]]  )  
-			#+ sum(  (  w*exp(XB1)*(TIME_UPPER-TIME_LOWER)  )[had_event] +
-			# wcomp*exp(XB2)*(TIME_UPPER-TIME_LOWER)[had_event]  ) 
-	hazard = ifelse(NUM==0, 0, NUM/DENOM )
-	hazard = ifelse(is.infinite(hazard),0,hazard)
-	return(hazard)
-}
-
-#' @export
-
- 
-
-Baseline_hazardSEPARATE2414 = function(Y,d,w,wcomp,XB1, XB2, cuts = 'events'){
-	MAXTIME = max(Y)
-	event_times = c(sort(unique(Y[d==1 & w!=0])),MAXTIME)
-	if(cuts == 'events'){
-		cutoffs = event_times
-	}else if(cuts == 'grouped'){
-		toosmall = which(diff(event_times)<0.005)#was 0.5
-		toosmall = toosmall + 1
-		if(length(toosmall)==0){
-			cutoffs = event_times
-		}else{
-			cutoffs = event_times[-toosmall]
-		}	
-	}
-	options(warn = -1)	
-	hazard_save = sapply(cutoffs, Baseline_hazardSEPARATE2414_i, Y,d,w,wcomp, XB1, XB2, cutoffs)
-	options(warn = 1)
-	return(data.frame(lower = c(0,cutoffs[1:(length(cutoffs)-1)]), upper = cutoffs, hazard = hazard_save))
-}
 
 
 
-#' @export
+####################################################
+### E-Step for Monte Carlo EM with Cox Baselines ### (Imputation Step)
+####################################################
 
-
-
-Baseline_Hazard = function(TIME, Basehaz){
-	j = max(which(Basehaz[,1]<=TIME))
-	return(Basehaz$Hazard_lower[j] + (TIME-Basehaz$lower[j])*Basehaz$hazard[j])
-}
 
  #' @export
 
@@ -405,6 +302,10 @@ EStepCOX_MC = function(datWIDE, beta, alpha, ImputeDat, COVIMPUTEFUNCTION,
 #' @export
 
 
+
+############################################
+### E-Step for EM with Weibull Baselines ###
+############################################
  
 
 EStepWEIB = function(datWIDE, Cov, beta, alpha, scale, shape, TransCov){	
@@ -434,46 +335,9 @@ EStepWEIB = function(datWIDE, Cov, beta, alpha, scale, shape, TransCov){
 
 
 
-
-
- #' @export
-
-
-Baseline_hazard_iEM = function(TIME,Y,d,w,XB){
-	at_risk = which(Y >= TIME)
-	had_event = which(Y == TIME & d == 1)
-	hazard = ifelse(sum(w[had_event]) ==0, 0, sum(w[had_event]) /sum(w[at_risk]*exp(XB[at_risk])))
-	return(hazard)
-}
-
-
- #' @export
-
-Baseline_HazardEM = function(Y,d,w,XB){
-	event_times = sort(unique(Y[d==1]))	
-	hazard_save = sapply(event_times, Baseline_hazard_iEM, Y,d,w,XB)
-	Hazard = cumsum(hazard_save)
-	return(data.frame(event_times, Hazard, hazard = hazard_save))
-}
-#' @export
-
- 
-Baseline_hazardSEPARATE2414_iEM = function(TIME,Y,d,w,wcomp, XB1, XB2){
-	at_risk = which(Y >= TIME)
-	had_event = which(Y == TIME & d == 1)
-	hazard = ifelse(sum(w[had_event]+wcomp[had_event]) == 0, 0,(sum(w[had_event]+wcomp[had_event])) /(sum(w[at_risk]*exp(XB1[at_risk])) + sum(wcomp[at_risk]*exp(XB2[at_risk])))  )
-	return(hazard)
-}
-
-#' @export
-
- 
-Baseline_HazardSEPARATE2414EM = function(Y,d,w, wcomp ,XB1,XB2){
-	event_times = sort(unique(Y[d==1]))	
-	hazard_save = sapply(event_times, Baseline_hazardSEPARATE2414_iEM, Y,d,w, wcomp ,XB1, XB2)
-	Hazard = cumsum(hazard_save)
-	return(data.frame(event_times, Hazard, hazard = hazard_save))
-}
+########################################
+### E-Step for EM with Cox Baselines ###
+########################################
 
 
 #' @export

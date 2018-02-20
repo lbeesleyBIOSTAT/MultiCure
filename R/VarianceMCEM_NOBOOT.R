@@ -47,6 +47,12 @@
 
 VarianceMCEM_NOBOOT = function(fit,datWIDE, CovImp, GImp, YRImp, deltaRImp, ASSUME, TransCov, BASELINE, PENALTY = 'None'){			
 
+
+	
+	########################################
+	### Initializing, Defining Functions ###
+	########################################
+	
 	if(PENALTY != 'None'){stop('Not Implemented for Ridge or Lasso Penalties')}
 	IMPNUM = length(CovImp)
 	SAVE_VAR = c()
@@ -55,7 +61,10 @@ VarianceMCEM_NOBOOT = function(fit,datWIDE, CovImp, GImp, YRImp, deltaRImp, ASSU
 	ASSUME = match.arg(ASSUME, choices = c('SameHazard', 'AllSeparate', 'SameBaseHaz', 'ProportionalHazard'))
 	BASELINE = match.arg(BASELINE, choices = c('weib','cox'))
 
-
+	#####################################################
+	### Fit Multistate Cure Model to Imputed Datasets ### (Estimate variances using coxph or survreg functions)
+	#####################################################
+	
 	for(i in 1:IMPNUM){
 		CovImpTEMP = CovImp[[i]]
 		datWIDETEMP = datWIDE
@@ -90,7 +99,17 @@ VarianceMCEM_NOBOOT = function(fit,datWIDE, CovImp, GImp, YRImp, deltaRImp, ASSU
 		}
 		print(paste('Finished Imputation', i, sep = ' '))
 	}
+	
+	###########################
+	### Apply Rubin's Rules ###
+	###########################
+	
 	OUT = RubinMe(means = t(SAVE_PARAM), vars = t(SAVE_VAR), impNum =IMPNUM)
+	
+	##############
+	### Return ###
+	##############
+	
 	if(ASSUME == 'ProportionalHazard'){
 		TransCov$Trans14 = c(TransCov$Trans14, 'INT')
 	}
@@ -122,10 +141,17 @@ VarianceMCEM_NOBOOT = function(fit,datWIDE, CovImp, GImp, YRImp, deltaRImp, ASSU
 #' @export
 
 MStep_WEIBVarEst = function(datWIDE, Cov,ImputeDat, ASSUME, TransCov){
-	### Transform the data into long format
+	###########################################
+	### Transform the data into long format ###
+	###########################################
+	
 	datLONG = CreateLong_MC(datWIDE, ImputeDat)
 	datLONG_sub = datLONG[datLONG$w != 0,]		
-	### Transform the covariates into the proper format
+	
+	#######################################################
+	### Transform the covariates into the proper format ###
+	#######################################################
+	
 	Cov_long = subset(datLONG_sub, select = -c(id, from, to, trans, Tstart, Tstop, time, status,w))
 	Cov_long_13 = Cov_long[,TransCov$Trans13]
 	Cov_long_13[!(datLONG_sub$from == 1 & datLONG_sub$to == 3),] = 0
@@ -145,6 +171,10 @@ MStep_WEIBVarEst = function(datWIDE, Cov,ImputeDat, ASSUME, TransCov){
 	A2 = length(TransCov$Trans24)
 	A3 = length(TransCov$Trans14)
 	A4 = length(TransCov$Trans34)	
+	
+	###############################
+	### Fit Weibull Regressions ###
+	###############################
 	
 	fit13 = survival::survreg(survival::Surv(datLONG_sub$time,datLONG_sub$status)~TRANS(as.matrix(Cov_long_13)), 
 			weights = datLONG_sub$w, dist = 'weib', subset = (datLONG_sub$trans == 1))
@@ -241,10 +271,17 @@ MStep_WEIBVarEst = function(datWIDE, Cov,ImputeDat, ASSUME, TransCov){
 					(CONVERT34[[1]][3:length(CONVERT34[[1]][,1]),2])^2)
 	}
 	
+	###############################
+	### Fit Logistic Regression ###
+	###############################
+	
 	fitLogistic = stats::glm(as.numeric(ImputeDat[[4]])~as.matrix(Cov[,TransCov$PNonCure]), family = binomial(link = 'logit'))
 	alpha = coef(fitLogistic)
 	VARIANCEALPHA = diag(summary(fitLogistic)$cov.scaled)	
 	
+	##############
+	### Return ###
+	##############
 	
 	return(list(beta = as.numeric(beta),alpha = as.numeric(alpha), scale = as.numeric(scale), shape = as.numeric(shape),
 		VAR_beta = as.numeric(VAR_BETA), VAR_alpha = as.numeric(VARIANCEALPHA) , 
@@ -257,10 +294,18 @@ MStep_WEIBVarEst = function(datWIDE, Cov,ImputeDat, ASSUME, TransCov){
 #' @export
 
 MStep_COXVarEst = function(datWIDE, Cov, ImputeDat, ASSUME, TransCov){
-	### Transform the data into long format
+	
+	###########################################
+	### Transform the data into long format ###
+	###########################################
+	
 	datLONG = CreateLong_MC(datWIDE, ImputeDat)
 	datLONG_sub = datLONG[datLONG$w != 0,]	
-	### Transform the covariates into the proper format
+	
+	#######################################################
+	### Transform the covariates into the proper format ###
+	#######################################################
+	
 	Cov_long = subset(datLONG_sub, select = -c(id, from, to, trans, Tstart, Tstop, time, status,w))
 	Cov_long_13 = Cov_long[,TransCov$Trans13]
 	Cov_long_13[!(datLONG_sub$from == 1 & datLONG_sub$to == 3),] = 0
@@ -280,6 +325,11 @@ MStep_COXVarEst = function(datWIDE, Cov, ImputeDat, ASSUME, TransCov){
 	A2 = length(TransCov$Trans24)
 	A3 = length(TransCov$Trans14)
 	A4 = length(TransCov$Trans34)
+	
+	###########################
+	### Fit Cox Regressions ###
+	###########################
+	
 	strata = survival::strata
 	if(ASSUME %in% c('AllSeparate')){
 		fitCox = survival::coxph(survival::Surv(datLONG_sub$time,datLONG_sub$status)~TRANS(as.matrix(Cov_long_13)) + 
@@ -327,10 +377,18 @@ MStep_COXVarEst = function(datWIDE, Cov, ImputeDat, ASSUME, TransCov){
 		beta = c(beta_short[TRANSITION==1], rep(beta_short[TRANSITION==2],2), beta_short[TRANSITION==9], beta_short[TRANSITION==4])	
 		VARIANCE = c(VARIANCE_short[TRANSITION==1], rep(VARIANCE_short[TRANSITION==2],2), VARIANCE_short[TRANSITION==9], VARIANCE_short[TRANSITION==4])
 	}
-
+	
+	###############################
+	### Fit Logistic Regression ###
+	###############################
+	
 	fitLogistic = stats::glm(as.numeric(ImputeDat[[4]])~as.matrix(Cov[,TransCov$PNonCure]), family = binomial(link = 'logit'))
 	alpha = coef(fitLogistic)
 	VARIANCEALPHA = diag(summary(fitLogistic)$cov.scaled)	
+		
+	##############
+	### Return ###
+	##############
 	
 	return(list(beta = as.numeric(beta),alpha = as.numeric(alpha), VAR_beta = as.numeric(VARIANCE), VAR_alpha = as.numeric(VARIANCEALPHA)))
 }

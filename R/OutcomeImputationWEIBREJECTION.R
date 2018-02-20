@@ -33,6 +33,11 @@
 
 
 UNEQUALCENSIMPUTEWEIBREJECTION = function(datWIDE, beta, alpha, scale, shape, ImputeDat, TransCov){
+	
+	##################
+	### Initialize ###
+	##################
+	
 	UnequalCens = ImputeDat[[1]]
 	CovImp = as.data.frame(ImputeDat[[3]])
 	GImp = ImputeDat[[4]]
@@ -84,13 +89,23 @@ UNEQUALCENSIMPUTEWEIBREJECTION = function(datWIDE, beta, alpha, scale, shape, Im
 	}
 	INDICES = which(is.na(YRImp))
 
+	##################
+	##################
+	### Impute T_R ### (Using Rejection Sampling)
+	##################
+	##################
+	
 	for(s in 1:length(INDICES)){
 		m = INDICES[s]
 		if(datWIDE$delta_D[m]==0){
 				ACCEPT = FALSE
 				counter = 1
 				while(ACCEPT == FALSE){				
-					#Draw from truncated weibull distribution
+					
+					################################################
+					### Draw from truncated weibull distribution ###
+					################################################
+					
 					U1 = runif(n=1, min = 0, max = 1)
 					draw = (-log( U1*(exp(-H13_R[m]) - exp(-H13_D[m])) + exp(-H13_D[m])    )*
 						(1/(exp(XB_beta13[m])*scale[1]))  )^(1/shape[1])
@@ -99,7 +114,11 @@ UNEQUALCENSIMPUTEWEIBREJECTION = function(datWIDE, beta, alpha, scale, shape, Im
 					h34_draw = shape[4]*scale[4]*exp(XB_beta34[m])*(datWIDE$Y_D[m]-draw)^(shape[4]-1) #34
 					Surv3_draw = exp(-H34_draw) #34									
 					
-					### K is the maximum value  lambda_34(Yd-t)^delta_d S_3(Yd-t) S_1(t) takes in Yr^0 to Yd
+					###################
+					### Determine K ### (Gives dominating function)
+					###################
+					
+					### K is the maximum value  lambda_34(Yd-t)^delta_d S_3(Yd-t) S_1(t) takes in Yr^0 to Yd. 
 					U = c(runif(n = 1000, min = datWIDE$Y_R[m], max = datWIDE$Y_D[m]))
 					U = sort(U)
 					K = ((shape[4]*scale[4]*exp(XB_beta34[m])*((datWIDE$Y_D[m] - U)^(shape[4]-1)))^datWIDE$delta_D[m])*
@@ -107,11 +126,19 @@ UNEQUALCENSIMPUTEWEIBREJECTION = function(datWIDE, beta, alpha, scale, shape, Im
 						exp(-scale[3]*exp(XB_beta14[m])*(U^shape[3]))
 					K = max(K)
 									
+					##########################
+					### Accept/Reject Draw ###
+					##########################
 					U2 = runif(n=1, min = 0, max = 1)
 					if(U2 <= ((1/K)*exp(-H14_draw))*Surv3_draw*(h34_draw^datWIDE$delta_D[m])){
 						ACCEPT = TRUE
 					}	
 					counter = counter + 1
+					
+					####################################
+					### Guard Against Infinite Loops ###
+					####################################
+					
 					if(counter == 1000){
 						#print('High counter')
 						ACCEPT = TRUE
@@ -122,7 +149,9 @@ UNEQUALCENSIMPUTEWEIBREJECTION = function(datWIDE, beta, alpha, scale, shape, Im
 			ACCEPT = FALSE
 			counter = 1
 			while(ACCEPT == FALSE){
-				#Draw from truncated weibull distribution
+					################################################
+					### Draw from truncated weibull distribution ###
+					################################################					
 					U1 = runif(n=1, min = 0, max = 1)
 					draw = (-log( U1*(exp(-H34_D[m]) - exp(-H34_R[m])) + exp(-H34_R[m])    )*
 						(1/(exp(XB_beta34[m])*scale[4]))  )^(1/shape[4])
@@ -133,7 +162,10 @@ UNEQUALCENSIMPUTEWEIBREJECTION = function(datWIDE, beta, alpha, scale, shape, Im
 					h13_draw = shape[1]*scale[1]*exp(XB_beta13[m])*(draw^(shape[1]-1)) #13
 					Surv13_draw = exp(-H13_draw) #13
 					
-					### K is the maximum value the function lambda_34(Yd-t)^delta_d S_3(Yd-t) S_1(t) takes in Yr^0 to Yd
+					###################
+					### Determine K ### (Gives dominating function)
+					###################
+					### K is the maximum value the function lambda_13(t) S_1(t) takes in Yr^0 to Yd
 					U = c(runif(n = 1000, min = datWIDE$Y_R[m], max = datWIDE$Y_D[m]))
 					U = sort(U)
 					K = ((shape[1]*scale[1]*exp(XB_beta13[m])*(U)^(shape[1]-1)))*
@@ -141,11 +173,19 @@ UNEQUALCENSIMPUTEWEIBREJECTION = function(datWIDE, beta, alpha, scale, shape, Im
 						exp(-scale[3]*exp(XB_beta14[m])*(U^shape[3]))
 					K = max(K)										
 
+					##########################
+					### Accept/Reject Draw ###
+					##########################
+					
 					U2 = runif(n=1, min = 0, max = 1)
 					if(U2 <= ((1/K)*exp(-H14_draw))*Surv13_draw*h13_draw){
 						ACCEPT = TRUE
 					}	
 					counter = counter + 1
+					
+					####################################
+					### Guard Against Infinite Loops ###
+					####################################
 					if(counter == 1000){
 						#print('High counter')
 						ACCEPT = TRUE

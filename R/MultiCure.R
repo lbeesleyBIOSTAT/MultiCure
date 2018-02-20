@@ -117,7 +117,7 @@ MultiCure = function(iternum, datWIDE, Cov, COVIMPUTEFUNCTION = NULL,  COVIMPUTE
 	####################
 	if(NEEDTOIMPUTE){	
 		CovTEMP =  COVIMPUTEINITIALIZE(Cov, CovMissing)
-	}else{CovTEMP = Cov}
+	}else{CovTEMP = Cov}	
 	fitTemp = stats::glm(datWIDE$delta_R~.,data = CovTEMP, family = 'binomial') 
 	predictions = as.numeric(stats::predict(fitTemp,type = 'response'))
 	datWIDE$p = rep(NA,length(datWIDE[,1]))
@@ -135,11 +135,13 @@ MultiCure = function(iternum, datWIDE, Cov, COVIMPUTEFUNCTION = NULL,  COVIMPUTE
 		YRImpSAVE = replicate(IMPNUM,datWIDE$Y_R)	
 		TAU_R = max(datWIDE$Y_R[datWIDE$delta_R==1]) #latest obseved recurrence											
 		for(i in 1:IMPNUM){
-			### Initialize G
+			
+			### Initialize G ###
 			GImp[is.na(GImp[,i]) & datWIDE$Y_R > TAU_R ,i] = 0 #Set subjects at risk after TAU_R to be non-cured
 			Draws = sapply(rep(mean(datWIDE$delta_R),Nobs),mSample)
 			GImp[is.na(GImp[,i]),i] = Draws[is.na(GImp[,i])] #Draw remaining G status using logistic glm above
 			
+			### Initialize Unequal Censoring Imputations ###
 			if(sum(datWIDE$UnequalCens)!=0){		
 				### If GImp == 0, No Recurrence
 					YRImp[UnequalCens == 1 & GImp[,i]==0,i] = datWIDE$Y_D[UnequalCens == 1 & GImp[,i]==0]
@@ -147,7 +149,7 @@ MultiCure = function(iternum, datWIDE, Cov, COVIMPUTEFUNCTION = NULL,  COVIMPUTE
 				### If GImp == 1 and Yd is after last recurrence event, Recurrence
 					deltaRImp[UnequalCens == 1 & GImp[,i]==1 & datWIDE$Y_D >= TAU_R,i] = 1 #G=1 and Yd >= last recurrence, deltaR = 1
 				### If GImp == 1 and Yd is before last recurrence event, Draw recurrence supposing Recurrence is U(0, TAU_R). P(DeltaR = 1) is expressed as:
-					prob = (datWIDE$Y_D -datWIDE$Y_R)/(TAU_R-datWIDE$Y_R)[UnequalCens == 1 & GImp[,i]==1 & datWIDE$Y_D < TAU_R]				
+					prob = ((datWIDE$Y_D -datWIDE$Y_R)/(TAU_R-datWIDE$Y_R))[UnequalCens == 1 & GImp[,i]==1 & datWIDE$Y_D < TAU_R]
 					Draws = sapply(prob,mSample)
 					deltaRImp[UnequalCens == 1 & GImp[,i]==1 & datWIDE$Y_D < TAU_R,i] = Draws				
 				### Initialize YrImpSAVE (only used in Metropolis-Hastings Cox imputation with unequal follow-up)
@@ -161,6 +163,8 @@ MultiCure = function(iternum, datWIDE, Cov, COVIMPUTEFUNCTION = NULL,  COVIMPUTE
 					YRImp[UnequalCens==1 & GImp[,i]==1 & deltaRImp[,i]==1,i] = 	YRImpSAVE[UnequalCens==1 & GImp[,i]==1 & deltaRImp[,i]==1,i]		
 					YRImp[UnequalCens==1 & GImp[,i]==1 & deltaRImp[,i]==0,i] = 	datWIDE$Y_D[UnequalCens==1 & GImp[,i]==1 & deltaRImp[,i]==0]	
 			}
+			
+			### Initialize Missing Covariates ###
 			if(sum(CovMissing) != 0){
 				CovImp[[i]] = COVIMPUTEINITIALIZE(Cov, CovMissing)
 			}

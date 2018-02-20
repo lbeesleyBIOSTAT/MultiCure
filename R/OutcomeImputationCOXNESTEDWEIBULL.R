@@ -33,6 +33,11 @@
 
 
 UNEQUALCENSIMPUTECOXNESTEDWEIB = function(datWIDE, beta, alpha, ImputeDat, TransCov){
+	
+	##################
+	### Initialize ###
+	##################
+	
 	UnequalCens = ImputeDat[[1]]
 	CovImp = as.data.frame(ImputeDat[[3]])
 	GImp = ImputeDat[[4]]
@@ -47,6 +52,9 @@ UNEQUALCENSIMPUTECOXNESTEDWEIB = function(datWIDE, beta, alpha, ImputeDat, Trans
 	Nobs = length(datWIDE[,1])
 	TAU_R = max(Basehaz13[,1])
 	
+	###################################################
+	### Fit model assuming Weibull baseline hazards ###
+	###################################################
 	
 	ImputeDatSHORT = list(UnequalCens = matrix(UnequalCens), CovMissing = matrix(CovMissing), CovImp = list(CovImp), GImp = matrix(GImpSAVE), 
 						YRImp = matrix(YRImp), deltaRImp = matrix(deltaRImp))					
@@ -56,11 +64,15 @@ UNEQUALCENSIMPUTECOXNESTEDWEIB = function(datWIDE, beta, alpha, ImputeDat, Trans
 	scale = param[[3]]
 	shape = param[[4]]
 
+	###########################
+	### Impute Delta_R, Y_R ###
+	###########################
+	
 	### Use original datWIDE to update YRImp and deltaRImp
 	if('T_R' %in% TransCov$Trans34){
-		ImputedOutcomes = UNEQUALCENSIMPUTEWEIB_TR(datWIDE, beta, alpha, scale, shape, ImputeDat = ImputeDat, TransCov)
+		ImputedOutcomes = UNEQUALCENSIMPUTEWEIBINVERSION(datWIDE, beta, alpha, scale, shape, ImputeDat = ImputeDat, TransCov)
 	}else{
-		ImputedOutcomes = UNEQUALCENSIMPUTEWEIB(datWIDE, beta, alpha, scale, shape, ImputeDat = ImputeDat, TransCov)
+		ImputedOutcomes = UNEQUALCENSIMPUTEWEIBREJECTION(datWIDE, beta, alpha, scale, shape, ImputeDat = ImputeDat, TransCov)
 	}
 	deltaRImp = ImputedOutcomes[[1]]
 	YRImp = ImputedOutcomes[[2]]	

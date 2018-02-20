@@ -31,6 +31,11 @@
 
 
 UNEQUALCENSIMPUTECOXMH = function(datWIDE, beta, alpha, ImputeDat, TransCov){
+	
+	##################
+	### Initialize ###
+	##################
+	
 	UnequalCens = ImputeDat[[1]]
 	CovImp = as.data.frame(ImputeDat[[3]])
 	GImp = ImputeDat[[4]]
@@ -76,6 +81,10 @@ UNEQUALCENSIMPUTECOXMH = function(datWIDE, beta, alpha, ImputeDat, TransCov){
 
 	INDICES = which(is.na(YRImp))
 	
+	########################
+	### Define Functions ###
+	########################
+	
 	if('T_R' %in% TransCov$Trans34){
 		fdCOX<-function(x){	
 			v = x[1]
@@ -109,11 +118,21 @@ UNEQUALCENSIMPUTECOXMH = function(datWIDE, beta, alpha, ImputeDat, TransCov){
 	TAU_R = max(Basehaz13[,1])
 
 	current = YRImpSAVE[INDICES]	
+	
+	##############################
+	### Propose New Imputation ###
+	##############################
+	
 	### Limits of proposal distribution determined so the baseline hazard and survival functions in fdCOX are nonzero. 
 	MIN = datWIDE$Y_R[INDICES]
 	MAX = pmin(datWIDE$Y_D[INDICES], TAU_R) 
 	#For subjects in INDICES, MIN <= MAX. This is a result of setting lambda13(TAU_R) = 0, which assigns subjects at risk after TAU_R to G=0
 	proposal = apply(cbind(MIN, MAX),1, mHPropose)	
+	
+	
+	#########################################################
+	### Metropolis-Hastings Method, Accept or Reject Draw ###
+	#########################################################
 	
 	logdens_CUR = log(as.numeric(apply(cbind(current, INDICES),1, fdCOX)))
 	logdens_PRO = log(as.numeric(apply(cbind(proposal, INDICES),1, fdCOX)))

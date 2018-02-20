@@ -9,7 +9,11 @@
 #' @export
 
 COVIMPUTEINITIALIZE = function(Cov, CovMissing){
-	### Code for initializing missing covariate X2 in the example
+	
+	#################################################################
+	### Code for initializing missing covariate X2 in the example ###
+	#################################################################
+	
 	Cov[CovMissing[,'X2'] == T,'X2'] = sample(x=Cov[CovMissing[,'X2']==F,'X2'], size = sum(as.numeric(CovMissing[,'X2'])), replace = T)	
     	return(Cov)
 }

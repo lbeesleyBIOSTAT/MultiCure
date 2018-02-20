@@ -35,6 +35,11 @@
 
 ### This function should only be used when T_R is not in Trans34
 UNEQUALCENSIMPUTECOXREJECTION = function(datWIDE, beta, alpha, ImputeDat, TransCov){
+	
+	##################
+	### Initialize ###
+	##################
+	
 	UnequalCens = ImputeDat[[1]]
 	CovImp = as.data.frame(ImputeDat[[3]])
 	GImp = ImputeDat[[4]]
@@ -109,41 +114,72 @@ UNEQUALCENSIMPUTECOXREJECTION = function(datWIDE, beta, alpha, ImputeDat, TransC
 
 	INDICES = which(is.na(YRImp))
 
-
+	##################
+	##################
+	### Impute T_R ### (Using Rejection Sampling)
+	##################
+	##################
+	
 	DrawVALWRAPPER = function(s){
 		m = INDICES[s]	
 		if(datWIDE$delta_D[m]==0){
-				ACCEPT = FALSE
-				counter = 1
+			ACCEPT = FALSE
+			counter = 1
+							
+			###################
+			### Determine K ### (Gives dominating function)
+			###################
 				
-				#This will give an approximate K (should even be an over-estimate)		
-				timesLOWER = sort(unique(c(Basehaz14[,1], datWIDE$Y_D[m]-Basehaz34[,1], datWIDE$Y_R[m], datWIDE$Y_D[m]) ))
-			  	timesLOWER = timesLOWER[timesLOWER>=datWIDE$Y_R[m] & timesLOWER <=datWIDE$Y_D[m] ]
-				K = max(((exp(XB_beta34[m])*BasehazFun_34(datWIDE$Y_D[m]-timesLOWER))^datWIDE$delta_D[m])*
-					exp(-exp(XB_beta34[m])*as.numeric(sapply(datWIDE$Y_D[m]-timesLOWER,Baseline_Hazard, Basehaz34 )))*
-					exp(-exp(XB_beta14[m])*as.numeric(sapply(timesLOWER,Baseline_Hazard, Basehaz14 ))))
-						
-				while(ACCEPT == FALSE){				
-					U1 = runif(n=1, min = 0, max = 1)
-					draw = stats::uniroot(Draw_Trunc13, interval = c(datWIDE$Y_R[m], min(datWIDE$Y_D[m],TAU)), 
-						U1,datWIDE$Y_R[m], min(datWIDE$Y_D[m],TAU))$root
-					if(abs(draw-datWIDE$Y_D[m]) < 0.001){draw = draw - 0.001}
-					H14_draw = exp(XB_beta14[m])*as.numeric(sapply(draw,Baseline_Hazard, Basehaz14 )) #14
-					H34_draw = exp(XB_beta34[m])*as.numeric(sapply(datWIDE$Y_D[m]-draw,Baseline_Hazard, Basehaz34 ))	 
-					h34_draw = exp(XB_beta34[m])*BasehazFun_34(datWIDE$Y_D[m]-draw)  #34
-					Surv3_draw = exp(-H34_draw) #34																				
+			#This will give an approximate K (should even be an over-estimate)		
+			timesLOWER = sort(unique(c(Basehaz14[,1], datWIDE$Y_D[m]-Basehaz34[,1], datWIDE$Y_R[m], datWIDE$Y_D[m]) ))
+		  	timesLOWER = timesLOWER[timesLOWER>=datWIDE$Y_R[m] & timesLOWER <=datWIDE$Y_D[m] ]
+			K = max(((exp(XB_beta34[m])*BasehazFun_34(datWIDE$Y_D[m]-timesLOWER))^datWIDE$delta_D[m])*
+				exp(-exp(XB_beta34[m])*as.numeric(sapply(datWIDE$Y_D[m]-timesLOWER,Baseline_Hazard, Basehaz34 )))*
+				exp(-exp(XB_beta14[m])*as.numeric(sapply(timesLOWER,Baseline_Hazard, Basehaz14 ))))
 					
-					U2 = runif(n=1, min = 0, max = 1)
-					if(U2 <= ((1/K)*exp(-H14_draw))*Surv3_draw*(h34_draw^datWIDE$delta_D[m])){
-						ACCEPT = TRUE
-					}	
-					counter = counter + 1
-					print(counter)					
+			while(ACCEPT == FALSE){	
+				
+				########################################
+				### Draw from truncated distribution ###
+				########################################
+							
+				U1 = runif(n=1, min = 0, max = 1)
+				draw = stats::uniroot(Draw_Trunc13, interval = c(datWIDE$Y_R[m], min(datWIDE$Y_D[m],TAU)), 
+					U1,datWIDE$Y_R[m], min(datWIDE$Y_D[m],TAU))$root
+				if(abs(draw-datWIDE$Y_D[m]) < 0.001){draw = draw - 0.001}
+				H14_draw = exp(XB_beta14[m])*as.numeric(sapply(draw,Baseline_Hazard, Basehaz14 )) #14
+				H34_draw = exp(XB_beta34[m])*as.numeric(sapply(datWIDE$Y_D[m]-draw,Baseline_Hazard, Basehaz34 ))	 
+				h34_draw = exp(XB_beta34[m])*BasehazFun_34(datWIDE$Y_D[m]-draw)  #34
+				Surv3_draw = exp(-H34_draw) #34																				
+				
+				##########################
+				### Accept/Reject Draw ###
+				##########################
+				U2 = runif(n=1, min = 0, max = 1)
+				if(U2 <= ((1/K)*exp(-H14_draw))*Surv3_draw*(h34_draw^datWIDE$delta_D[m])){
+					ACCEPT = TRUE
+				}	
+				counter = counter + 1
+				print(counter)	
+				
+				####################################
+				### Guard Against Infinite Loops ###
+				####################################
+						
+				if(counter == 1000){
+					#print('High counter')
+					ACCEPT = TRUE
 				}
+								
+			}
 		}else if(datWIDE$delta_D[m]==1){
 			ACCEPT = FALSE
 			counter = 1		
-						
+			
+			###################
+			### Determine K ### (Gives dominating function)
+			###################	
+			
 			#This will give an approximate K (should even be an over-estimate)		
 			timesLOWER = sort(unique(c(Basehaz14[,1], Basehaz13[,1], datWIDE$Y_R[m], datWIDE$Y_D[m]) ))
 		  	timesLOWER = timesLOWER[timesLOWER>=datWIDE$Y_R[m] & timesLOWER <=datWIDE$Y_D[m] ]
@@ -152,7 +188,10 @@ UNEQUALCENSIMPUTECOXREJECTION = function(datWIDE, beta, alpha, ImputeDat, TransC
 
 			while(ACCEPT == FALSE){
 				
-				#Draw from truncated weibull distribution
+				########################################
+				### Draw from truncated distribution ###
+				########################################
+				
 				U1 = runif(n=1, min = 0, max = 1)
 				draw = stats::uniroot(Draw_Trunc34, interval = c(datWIDE$Y_R[m],min(datWIDE$Y_D[m],TAU)), 
 					U1,datWIDE$Y_R[m], min(datWIDE$Y_D[m],TAU))$root
@@ -161,13 +200,27 @@ UNEQUALCENSIMPUTECOXREJECTION = function(datWIDE, beta, alpha, ImputeDat, TransC
 				H13_draw = exp(XB_beta13[m])*as.numeric(sapply(draw,Baseline_Hazard, Basehaz13 )) #13
 				h13_draw = exp(XB_beta13[m])*BasehazFun_13(draw) #13
 				Surv13_draw = exp(-H13_draw) #13
-																	
+				
+				##########################
+				### Accept/Reject Draw ###
+				##########################
+																		
 				U2 = runif(n=1, min = 0, max = 1)
 				if(U2 <= ((1/K)*exp(-H14_draw))*Surv13_draw*h13_draw){
 					ACCEPT = TRUE
 				}	
 				counter = counter + 1
-				print(counter)					
+				print(counter)	
+				
+				####################################
+				### Guard Against Infinite Loops ###
+				####################################
+						
+				if(counter == 1000){
+					#print('High counter')
+					ACCEPT = TRUE
+				}
+								
 			}
 		}#End of ifelse
 		if(draw >= datWIDE$Y_D[m] ){draw = datWIDE$Y_D[m] - (datWIDE$Y_D[m]/1000)}

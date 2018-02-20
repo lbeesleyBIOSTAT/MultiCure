@@ -28,6 +28,11 @@
 
 
 UNEQUALCENSIMPUTEWEIBINVERSION = function(datWIDE, beta, alpha, scale, shape, ImputeDat, TransCov){
+	
+	##################
+	### Initialize ###
+	##################
+	
 	UnequalCens = ImputeDat[[1]]
 	CovImp = as.data.frame(ImputeDat[[3]])
 	GImp = ImputeDat[[4]]
@@ -64,6 +69,9 @@ UNEQUALCENSIMPUTEWEIBINVERSION = function(datWIDE, beta, alpha, scale, shape, Im
 
 	INDICES = which(is.na(YRImp))
 
+	########################
+	### Define Functions ###
+	########################
 	if('T_R' %in% TransCov$Trans34){
 		fd<-function(v){
 			XB_beta34MOD = as.numeric(beta[TRANS==4][TransCov$Trans34!= 'T_R'] %*% t(cbind(CovImp[[i]][m,TransCov$Trans34[TransCov$Trans34!='T_R']])))
@@ -88,6 +96,10 @@ UNEQUALCENSIMPUTEWEIBINVERSION = function(datWIDE, beta, alpha, scale, shape, Im
 			ZERO=(g$integral/y[m])-U
 		return(ZERO)
 	}	
+	
+	##################
+	### Impute T_R ### (By inverting the survival function for T_R)
+	##################
 	
 	for(s in 1:length(INDICES)){
 		m = INDICES[s]

@@ -37,9 +37,17 @@ COVIMPUTEFUNCTION = function(datWIDE,param, ImputeDat, TransCov){
 	deltaRImp = ImputeDat[[6]]	
 	Nobs = length(datWIDE[,1])
 	
-	##########
-	### X2 ###
-	##########
+	#################
+	#################
+	### Impute X2 ###
+	#################
+	#################
+
+	#######################################
+	### Estimate Parameters for X2 | X1 ###
+	#######################################
+	
+	#Note: We do not draw the parameter values. We are doing improper imputation..
 	fit = lm(X2~X1, data = CovImp)	
 	theta = coef(fit)
  	sigma2 = (summary(fit)$sigma)^2
@@ -50,6 +58,10 @@ COVIMPUTEFUNCTION = function(datWIDE,param, ImputeDat, TransCov){
 	}
 
 	current = CovImp[CovMissing[,'X2']==T,'X2']
+	
+	##################################
+	### Propose New Imputed Values ###
+	##################################
 	proposal = sapply(current, mPropose)	
 	
 	XB = theta[1] + theta[2]*CovImp[CovMissing[,'X2']==T,'X1']
@@ -58,6 +70,10 @@ COVIMPUTEFUNCTION = function(datWIDE,param, ImputeDat, TransCov){
 
 	TEMP = data.frame(datWIDE, CovImp, GImp, YRImp, deltaRImp)
 	TEMP = TEMP[CovMissing[,'X2']==T,]	
+	
+	#######################################################################
+	### Estimate Log-Likelihood for current and proposed imputed values ###
+	#######################################################################
 	
 	if(BASELINE == 'weib'){
 		TEMP[,c('X2')] = current
@@ -73,9 +89,13 @@ COVIMPUTEFUNCTION = function(datWIDE,param, ImputeDat, TransCov){
 
 	alph<-runif(sum(CovMissing[,'X2']==T),0,1)
 
-
+	####################################################################
+	### Metropolis-Hastings, accept or reject proposed imputed value ###
+	####################################################################
+	
 	ACCEPT = log(alph)<(LogLik_PRO +log(dens_marg_PRO)+log(dnorm(current, proposal,0.5))-LogLik_CUR-log(dens_marg_CUR)-log(dnorm(proposal, current,0.5)))
 	CovImp[CovMissing[,'X2']==T,'X2'][ACCEPT] = proposal[ACCEPT]
+	
 	return(CovImp)
 }
 

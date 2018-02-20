@@ -5,14 +5,21 @@
 	#' @export
 
 MStep_WEIB = function(datWIDE, Cov, ImputeDat, ASSUME, TransCov, NEEDTOIMPUTE, PENALTY){
-	### Transform the data into long format
+	###########################################
+	### Transform the data into long format ###
+	###########################################	
+	
 	if(NEEDTOIMPUTE){
 		datLONG = CreateLong_MC(datWIDE, ImputeDat)
 	}else{
 		datLONG = CreateLong(datWIDE, Cov)
 	}
 	datLONG_sub = datLONG[datLONG$w != 0 & datLONG$time != 0,]		
-	### Transform the covariates into the proper format
+	
+	#######################################################
+	### Transform the covariates into the proper format ###
+	#######################################################
+	
 	Cov_long = subset(datLONG_sub, select = -c(id, from, to, trans, Tstart, Tstop, time, status,w))
 	Cov_long_13 = data.frame(Cov_long[,TransCov$Trans13])
 	Cov_long_13[!(datLONG_sub$from == 1 & datLONG_sub$to == 3),] = 0
@@ -38,6 +45,10 @@ MStep_WEIB = function(datWIDE, Cov, ImputeDat, ASSUME, TransCov, NEEDTOIMPUTE, P
 	A2 = length(TransCov$Trans24)
 	A3 = length(TransCov$Trans14)
 	A4 = length(TransCov$Trans34)	
+	
+	######################
+	### Fit CPH Models ###
+	######################
 	
 	datLONG_sub$w[datLONG_sub$trans==3 & datLONG_sub$status==1]
 	fit13 = survival::survreg(survival::Surv(datLONG_sub$time,datLONG_sub$status)~TRANS(as.matrix(Cov_long_13)), 
@@ -98,6 +109,10 @@ MStep_WEIB = function(datWIDE, Cov, ImputeDat, ASSUME, TransCov, NEEDTOIMPUTE, P
 		scale = as.numeric(c(mscale13, mscale2414, mscale2414, mscale34)) 
 		shape = as.numeric(c(mshape13, mshape2414, mshape2414, mshape34))
 	}
+	
+	###########################
+	### Fit Logistic Models ###
+	###########################
 
 	if(NEEDTOIMPUTE){
 		TEMPCOV = c()
@@ -145,14 +160,20 @@ MStep_WEIB = function(datWIDE, Cov, ImputeDat, ASSUME, TransCov, NEEDTOIMPUTE, P
 #' @export
 
 MStep_COX = function(datWIDE, Cov, ImputeDat, ASSUME, TransCov, NEEDTOIMPUTE, PENALTY){
-	### Transform the data into long format
+	###########################################
+	### Transform the data into long format ###
+	###########################################
 	if(NEEDTOIMPUTE){
 		datLONG = CreateLong_MC(datWIDE, ImputeDat)
 	}else{
 		datLONG = CreateLong(datWIDE, Cov)
 	}
 	datLONG_sub = datLONG[datLONG$w != 0 & datLONG$time != 0,]
-	### Transform the covariates into the proper format
+	
+	#######################################################
+	### Transform the covariates into the proper format ###
+	#######################################################
+	
 	Cov_long = subset(datLONG_sub, select = -c(id, from, to, trans, Tstart, Tstop, time, status,w))
 	Cov_long_13 = data.frame(Cov_long[,TransCov$Trans13])
 	Cov_long_13[!(datLONG_sub$from == 1 & datLONG_sub$to == 3),] = 0
@@ -172,6 +193,11 @@ MStep_COX = function(datWIDE, Cov, ImputeDat, ASSUME, TransCov, NEEDTOIMPUTE, PE
 	A2 = length(TransCov$Trans24)
 	A3 = length(TransCov$Trans14)
 	A4 = length(TransCov$Trans34)
+	
+	######################
+	### Fit CPH Models ###
+	######################
+	
 	if(PENALTY == 'None'){
 		TRANS = I
 		strata = survival::strata
@@ -317,6 +343,10 @@ MStep_COX = function(datWIDE, Cov, ImputeDat, ASSUME, TransCov, NEEDTOIMPUTE, PE
 		
 	}#end of PENALTY ifelse
 
+
+	###########################
+	### Fit Logistic Models ###
+	###########################
 
 	if(NEEDTOIMPUTE){
 		TEMPCOV = c()
