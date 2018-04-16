@@ -21,7 +21,7 @@ devtools::use_package("shiny")
 
 
 #' MultiCure
-#' @description This function fits a Multistate Cure model using Expectation-Maximization (EM) and Monte Carlo Expectation-Maximization (MCEM) algorithms. This function will obtain the maximum likelihood estimate of the model parameter, but it will not estimate standard errors. 
+#' @description This function fits a Multistate Cure model using Expectation-Maximization (EM) and Monte Carlo Expectation-Maximization (MCEM) algorithms using the method in Beesley and Taylor (2018) in Biostatistics. This function will obtain the maximum likelihood estimate of the model parameter, but it will not estimate standard errors. 
 #'
 #' @param iternum number of iterations for the EM or MCEM algorithm
 #' @param datWIDE A data frame with the following columns (names must match): 
