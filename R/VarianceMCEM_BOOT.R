@@ -31,7 +31,7 @@
 #' \itemize{
 #' \item Estimate an estimate of the multistate cure model parameter from Rubin's Rules
 #' \item Variance an estimate of variance of the the multistate cure model parameter from Rubin's Rules
-#' \item v The estimated degrees of freedom of the t-distribution of the parameter estimate from Rubin's Rules
+#' \item v, the estimated degrees of freedom of the t-distribution of the parameter estimate from Rubin's Rules
 #'}
 #' @details This function provides parameter estimates and estimated variances. The parameter estimates are obtained using Rubin's rules, but an alternative estimate of the multistate cure model parameter can be obtained by averaging the parameter estimates from the last few iterations of the model fitting algorithm. In our experience, we found that the approach that averages across the last few iterations (rather than estimated using Rubin's rules) provides a better estimate of the parameter of interest.
 #'
