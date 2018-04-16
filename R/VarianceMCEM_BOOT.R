@@ -1,6 +1,6 @@
 
 #' VarianceMCEM_BOOT
-#' @description The function VarianceMCEM_BOOT performs variance estimation for the Multistate Cure Model when the model is fit using a Monte Carlo EM Algorithm. For each imputed dataset, this function estimates parameter variances by fitting the multistate cure model to bootstrap samples of the imputed dataset. Then, Rubin's rules are used to obtain a single set of parameter estimates and standard errors across imputed datasets. Important!!!: The function ProperDraws_MC should be used to obtain the imputed datasets to be used in this function. This ensures that the imputed datasets are (roughly) proper imputations and that Rubin's rules can then be applied. 
+#' @description The function VarianceMCEM_BOOT performs variance estimation for the Multistate Cure Model when the model is fit using a Monte Carlo EM Algorithm. For each imputed dataset, this function estimates parameter variances by fitting the multistate cure model to bootstrap samples of the imputed dataset. Then, Rubin's rules are used to obtain a single set of parameter estimates and standard errors across imputed datasets. Important!!!: The function ProperDraws_MC should be used to obtain the imputed datasets used in this function. This ensures that the imputed datasets are (roughly) proper imputations and that Rubin's rules can then be applied. 
 #'
 #' @param fit Multistate cure model fit from MultiCure
 #' @param bootnum Number of bootstrap samples used for each imputed dataset
