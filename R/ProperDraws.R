@@ -15,8 +15,8 @@
 #' @param GImp  A matrix with IMPNUM elements containing the imputations of G output from MultiCure
 #' @param YRImp  A matrix with IMPNUM elements containing the imputations of Y_R output from MultiCure
 #' @param deltaRImp  A matrix with IMPNUM elements containing the imputations of delta_R output from MultiCure
-#' @param COVIMPUTEFUNCTION This is a function for creating a single imputed version of the covariate set when covariate imputation is needed. This is user-specified. See XXXXXX for an example of the input and output structure. 
-#' @param COVIMPUTEINITIALIZE This is a function for initializing the missing values of the covariates. This is user-specified. See XXXXXX for an example of the input and output structure. 
+#' @param COVIMPUTEFUNCTION This is a function for creating a single imputed version of the covariate set when covariate imputation is needed. This is user-specified. See COVIMPUTEFUNCTION_Example.R for an example of the input and output structure. 
+#' @param COVIMPUTEINITIALIZE This is a function for initializing the missing values of the covariates. This is user-specified. See COVIMPUTEINITIALIZE_Example.R for an example of the input and output structure. 
 #' @param UNEQUALCENSIMPUTE This is a function for imputing the outcome data in the unequal censoring (follow-up) setting. This only needs to be specified when we have unequal censoring. Several default options exist, but this could also be a user-specified function. Inputs and outputs must match default versions.
 #' @param ASSUME This variables indicates what equality assumptions we are making regarding the 24 and 14 transitions. The possible options are:
 #' \itemize{
