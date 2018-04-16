@@ -30,7 +30,7 @@ devtools::use_package("shiny")
 #' \item delta_R, the recurrence event/censoring indicator
 #'\item Y_D, the death event/censoring time 
 #' \item delta_D, the death event/censoring indicator
-#' \item G, the cure status variable. This takes value 1 for known non-cured, 0 for "known" cured and NA for unknown cur`e status
+#' \item G, the cure status variable. This takes value 1 for known non-cured, 0 for "known" cured and NA for unknown cure status
 #'}
 #' @param Cov A data frame containing the covariates used in the model fit. The columns must be named. Factors must be represented as dummy variables. If ridge or lasso penalties are being used, the covariates should be rescaled to have unit variances. 
 #' @param trace This variable indicates whether the parameter estimates at each iteration are to be saved and, if imputation is needed, whether the imputed datasets are output
