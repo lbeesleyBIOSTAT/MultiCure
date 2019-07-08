@@ -5,4 +5,4 @@ Created by Lauren J Beesley
 
 Contact: lbeesley@umich.edu
 
-This package uses methods described in Beesley and Taylor (2018) in Biostatistics.
+This package uses methods described in Beesley and Taylor (2019) in Biostatistics.
