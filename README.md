@@ -10,3 +10,6 @@ This package uses methods described in Beesley and Taylor (2019) in Biostatistic
 This package can be installed using the following R code:
 
 devtools::install_github("lbeesleyBIOSTAT/MultiCure", build = TRUE, build_opts = c())
+library(MultiCure)
+utils::browseVignettes('MultiCure')
+
