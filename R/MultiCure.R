@@ -1,27 +1,20 @@
 
 
-devtools::use_package("survival")
-devtools::use_package("MASS")
-# devtools::use_package("nnet")
-devtools::use_package("reshape2")
-devtools::use_package("cubature")
-# devtools::use_package("GenKern")
-# devtools::use_package("coda")
-# devtools::use_package("eha")
-devtools::use_package("boot")
-devtools::use_package("glmnet")
-# devtools::use_package("flexsurv")
-devtools::use_package("SurvRegCensCov")
-# devtools::use_package("mice")
-# devtools::use_package("pracma")
-# devtools::use_package("smcure")
-devtools::use_package("shiny")
+usethis::use_package("survival")
+usethis::use_package("MASS")
+usethis::use_package("reshape2")
+usethis::use_package("cubature")
+usethis::use_package("boot")
+usethis::use_package("glmnet")
+usethis::use_package("SurvRegCensCov")
+usethis::use_package("shiny")
+usethis::use_package("mice")
 
 
 
 
 #' MultiCure
-#' @description This function fits a Multistate Cure model using Expectation-Maximization (EM) and Monte Carlo Expectation-Maximization (MCEM) algorithms using the method in Beesley and Taylor (2018) in Biostatistics. This function will obtain the maximum likelihood estimate of the model parameter, but it will not estimate standard errors. 
+#' @description This function fits a Multistate Cure model using Expectation-Maximization (EM) and Monte Carlo Expectation-Maximization (MCEM) algorithms as in Beesley et al. (2018) in Biostatistics.
 #'
 #' @param iternum number of iterations for the EM or MCEM algorithm
 #' @param datWIDE A data frame with the following columns (names must match): 
@@ -30,10 +23,9 @@ devtools::use_package("shiny")
 #' \item delta_R, the recurrence event/censoring indicator
 #'\item Y_D, the death event/censoring time 
 #' \item delta_D, the death event/censoring indicator
-#' \item G, the cure status variable. This takes value 1 for known non-cured, 0 for "known" cured and NA for unknown cure status
+#' \item G, the cure status variable. This takes value 1 for known non-cured, 0 for "known" cured and NA for unknown cur`e status
 #'}
 #' @param Cov A data frame containing the covariates used in the model fit. The columns must be named. Factors must be represented as dummy variables. If ridge or lasso penalties are being used, the covariates should be rescaled to have unit variances. 
-#' @param trace This variable indicates whether the parameter estimates at each iteration are to be saved and, if imputation is needed, whether the imputed datasets are output
 #' @param ASSUME This variables indicates what equality assumptions we are making regarding the 24 and 14 transitions. The possible options are:
 #' \itemize{
 #' \item 'SameHazard': Lambda_14(t) = Lambda_24(t)
@@ -44,9 +36,8 @@ devtools::use_package("shiny")
 #' @param TransCov a list with elements: Trans13, Trans24, Trans14, Trans34, PNonCure. Each list element is a vector containing the names of the variables in Cov to be used in the model for the corresponding transition. 13 is NonCured -> Recurrence, 24 is Cured -> Death, 14 is NonCured -> Death, 34 is Recurrence -> Death. PNonCure contains the names of the covariates for the logistic regression for P(NonCure). 
 #' @param IMPNUM number of imputed datasets. This is only used when covariates and/or outcome values are being imputed. 
 #' @param BASELINE This variable indicates the assumptions about the baseline hazard form. This can take values 'weib' and 'cox'
-#' @param PENALTY This variable indicates whether we are using any variable selection in the model fitting. The current code has been implemented and tested for option 'None' (no variable selection). Additional options include 'Ridge' (ridge regression for all covariates in all models) and 'Lasso' (lasso for all covariates in all models, only implemented for Cox baseline hazards), but these two additional options are under development and have not been rigorously tested.
+#' @param PENALTY This variable indicates whether we are using any variable selection in the model fitting. The current code has been implemented and tested for option 'None' (no variable selection). Additional options include 'Ridge' (ridge regression for all covariates in all models) and 'Lasso' (lasso for all covariates in all models, only implemented for Cox baseline hazards), but these two additional options have not been rigorously tested.
 #' @param PARAMINIT If desired, this can be a vector with initializations for the model parameters. The ordering of these parameters is c(beta, alpha, scale, shape) using the same ordering as in the output
-#' @param ImputeDat This argument is used in variance estimation for the MCEM algorithm. It provides an initialization for the imputed data. This argument can be ignored during routine EM and MCEM model fits.
 #' @param UNEQUALCENSIMPUTE This is a function for imputing the outcome data in the unequal censoring (follow-up) setting. This only needs to be specified when we have unequal censoring. Several default options are included in this package, but this could also be a user-specified function. Inputs and outputs must match default versions.
 #' @param COVIMPUTEFUNCTION This is a function for creating a single imputed version of the covariate set when covariate imputation is needed. This is user-specified. See COVIMPUTEFUNCTION_Example.R for an example of the input and output structure. 
 #' @param COVIMPUTEINITIALIZE This is a function for initializing the missing values of the covariates. This is user-specified. See COVIMPUTEINITIALIZE_Example.R for an example of the input and output structure. 
@@ -57,13 +48,13 @@ devtools::use_package("shiny")
 #' \item alpha estimate at final iteration.
 #' \item scale estimate at final iteration. The ordering is: Transition 1->3, 2->4, 1->4, 3->4 
 #' \item shape estimate at final iteration. The ordering is: Transition 1->3, 2->4, 1->4, 3->4
-#' \item If trace = T, fit will also contain estimates of beta, alpha, scale, and shape from each iteration and, if imputation is performed, the imputed values of Cov, G, Y_R, and delta_R from the last iteration. If imputation is not performed, includes the most recent weight p.
+#' \item fit will also contain estimates of beta, alpha, scale, and shape from each iteration and, if imputation is performed, the imputed values of Cov, G, Y_R, and delta_R from the last iteration. If imputation is not performed, includes the most recent weight p.
 #'}
 #' If BASELINE = 'cox', this is a list containing 
 #' \itemize{
 #' \item beta estimate at final iteration. The ordering is: Beta for Transition 1->3, Beta for Transition 2->4, Beta for Transition 1->4, Beta_0 if BASELINE equals 'ProportionalHazard', Beta for Transition 3->4
 #' \item alpha estimate at final iterations. 
-#' \item If trace = T, fit will also contain estimates of beta and alpha from each iteration and, if imputation is performed, the imputed values of Cov, G, Y_R, and delta_R from the last iteration. If imputation is not performed, includes the most recent weight p.
+#' \item fit will also contain estimates of beta and alpha from each iteration and, if imputation is performed, the imputed values of Cov, G, Y_R, and delta_R from the last iteration. If imputation is not performed, includes the most recent weight p.
 #'}
 #' @details In order to fit a model with no covariates for one or more of the transitions or the logistic regression, include an all-zero covariate in Cov and list that covariate for the corresponding transition/s in TransCov. 
 #'
@@ -79,7 +70,7 @@ devtools::use_package("shiny")
 
 
 
-MultiCure = function(iternum, datWIDE, Cov, COVIMPUTEFUNCTION = NULL,  COVIMPUTEINITIALIZE = NULL, UNEQUALCENSIMPUTE = NULL, trace = TRUE, ASSUME = 'SameHazard', TransCov, IMPNUM = NULL, BASELINE = 'weib', PENALTY = 'None', PARAMINIT = NULL, ImputeDat = NULL){
+MultiCure = function(iternum, datWIDE, Cov, COVIMPUTEFUNCTION = NULL,  COVIMPUTEINITIALIZE = NULL, UNEQUALCENSIMPUTE = NULL, ASSUME = 'SameHazard', TransCov, IMPNUM = NULL, BASELINE = 'weib', PENALTY = 'None', PARAMINIT = NULL){
 	
 	###########################
 	### Checking Arguments ####
@@ -115,7 +106,7 @@ MultiCure = function(iternum, datWIDE, Cov, COVIMPUTEFUNCTION = NULL,  COVIMPUTE
 	####################
 	### Initialize p ### (EM Algorithm)
 	####################
-	if(NEEDTOIMPUTE){	
+	if(NEEDTOIMPUTE & sum(CovMissing)!=0){	
 		CovTEMP =  COVIMPUTEINITIALIZE(Cov, CovMissing)
 	}else{CovTEMP = Cov}	
 	fitTemp = stats::glm(datWIDE$delta_R~.,data = CovTEMP, family = 'binomial') 
@@ -127,7 +118,7 @@ MultiCure = function(iternum, datWIDE, Cov, COVIMPUTEFUNCTION = NULL,  COVIMPUTE
 	### Initialize Imputes ###
 	##########################
 	
-	if(NEEDTOIMPUTE & is.null(ImputeDat)){
+	if(NEEDTOIMPUTE ){
 		GImp = replicate(IMPNUM,datWIDE$G)
 		YRImp = replicate(IMPNUM,datWIDE$Y_R)
 		deltaRImp = replicate(IMPNUM,datWIDE$delta_R)
@@ -229,7 +220,6 @@ MultiCure = function(iternum, datWIDE, Cov, COVIMPUTEFUNCTION = NULL,  COVIMPUTE
 		alpha_save = cbind(alpha_save, alpha)
 		scale_save = cbind(scale_save, scale)
 		shape_save = cbind(shape_save, shape)	
-		#l_save = c(l_save, LogLikObs_WEIBMCEM(datWIDE, ImputeDat, beta, alpha, scale, shape,TransCov))					
 	}else{
 		if(!is.null(PARAMINIT)){
 			beta = PARAMINIT$beta
@@ -241,7 +231,6 @@ MultiCure = function(iternum, datWIDE, Cov, COVIMPUTEFUNCTION = NULL,  COVIMPUTE
 		}
 		beta_save = cbind(beta_save, beta)
 		alpha_save = cbind(alpha_save, alpha)
-		#l_save = c(l_save, LogLikObs_COXMCEM(datWIDE, ImputeDat, beta, alpha,TransCov, ASSUME))		
 
 	}
 	
@@ -278,8 +267,7 @@ MultiCure = function(iternum, datWIDE, Cov, COVIMPUTEFUNCTION = NULL,  COVIMPUTE
 			alpha_save = cbind(alpha_save, alpha)
 			scale_save = cbind(scale_save, scale)
 			shape_save = cbind(shape_save, shape)
-			#l_save = c(l_save, LogLikObs_WEIBMCEM(datWIDE, ImputeDat, beta, alpha, scale, shape,TransCov))	
-			
+
 			iter = iter + 1
 			gc() #NEW
 		}#end while loop	
@@ -317,8 +305,6 @@ MultiCure = function(iternum, datWIDE, Cov, COVIMPUTEFUNCTION = NULL,  COVIMPUTE
 			alpha = param[[2]]
 			beta_save = cbind(beta_save, beta)
 			alpha_save = cbind(alpha_save, alpha)
-			#l_save = c(l_save, LogLikObs_COXMCEM(datWIDE, ImputeDat, beta, alpha,TransCov, ASSUME))
-			
 			iter = iter + 1
 			gc() #NEW
 		}#end while loop
@@ -330,24 +316,20 @@ MultiCure = function(iternum, datWIDE, Cov, COVIMPUTEFUNCTION = NULL,  COVIMPUTE
 	### Return ###
 	##############
 	if(BASELINE == 'weib'){
-		if(trace & NEEDTOIMPUTE){
+		if(NEEDTOIMPUTE){
 			return(list(beta = beta, alpha= alpha, scale = scale, shape = shape, 
 						beta_save = beta_save, alpha_save = alpha_save, scale_save = scale_save, shape_save = shape_save, 
 						CovImp = CovImp, GImp = GImp, YRImp = YRImp, deltaRImp = deltaRImp))
-		}else if(trace & !NEEDTOIMPUTE){	
+		}else if(!NEEDTOIMPUTE){	
 			return(list(beta = beta, alpha= alpha, scale = scale, shape = shape, 
 						beta_save = beta_save, alpha_save = alpha_save, scale_save = scale_save, shape_save = shape_save))
-		}else{
-			return(list(beta = beta, alpha= alpha, scale = scale, shape = shape))
-		}		
+		}
 	}else{
-		if(trace & NEEDTOIMPUTE){
+		if(NEEDTOIMPUTE){
 			return(list(beta = beta, alpha= alpha, beta_save = beta_save, alpha_save = alpha_save, 
 						CovImp = CovImp, GImp = GImp, YRImp = YRImp, deltaRImp = deltaRImp))
-		}else if(trace & !NEEDTOIMPUTE){	
+		}else if(!NEEDTOIMPUTE){	
 			return(list(beta = beta, alpha= alpha, beta_save = beta_save, alpha_save = alpha_save, p_save = p_save))
-		}else{
-			return(list(beta = beta, alpha= alpha))
 		}			
 	}#end ifelse
 }#end function

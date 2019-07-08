@@ -4,8 +4,8 @@
 \alias{UNEQUALCENSIMPUTEWEIBREJECTION}
 \title{UNEQUALCENSIMPUTEWEIBREJECTION}
 \usage{
-UNEQUALCENSIMPUTEWEIBREJECTION(datWIDE, beta, alpha, scale, shape, ImputeDat,
-  TransCov)
+UNEQUALCENSIMPUTEWEIBREJECTION(datWIDE, beta, alpha, scale, shape,
+  ImputeDat, TransCov)
 }
 \arguments{
 \item{datWIDE}{defined as in MultiCure}

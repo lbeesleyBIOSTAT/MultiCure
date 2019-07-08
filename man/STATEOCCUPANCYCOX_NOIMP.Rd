@@ -4,8 +4,8 @@
 \alias{STATEOCCUPANCYCOX_NOIMP}
 \title{STATEOCCUPANCYCOX_NOIMP}
 \usage{
-STATEOCCUPANCYCOX_NOIMP(times, TransCov, newCov, beta, alpha, Haz_13, Haz_24,
-  Haz_14, Haz_34)
+STATEOCCUPANCYCOX_NOIMP(times, TransCov, newCov, beta, alpha, Haz_13,
+  Haz_24, Haz_14, Haz_34)
 }
 \arguments{
 \item{times}{number of iterations for the EM or MCEM algorithm}

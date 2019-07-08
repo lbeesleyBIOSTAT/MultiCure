@@ -1,8 +1,8 @@
 
 
 
-#' COVIMPUTEFUNCTION
-#' @description The function COVIMPUTEFUNCTION creates a single imputed version of the covariate matrix. An example function is included in the package, but the user must specify their own function when applying MultiCure to datasets with covariate missingness. This function must have input/output as described below.
+#' COVIMPUTEFUNCTION_Example
+#' @description The function COVIMPUTEFUNCTION_Example creates a single imputed version of the covariate matrix. An example function is included in the package, but the user must specify their own function when applying MultiCure to datasets with covariate missingness. This function must have input/output as described below.
 
 #' @param datWIDE defined as in MultiCure
 #' @param param If baselines are WEIBULL, this is a vector containing beta, alpha, scale, and shape. If baselines are COX, this is a vector containing beta and alpha. 
@@ -22,13 +22,13 @@
 #' }
 #' @param TransCov defined as in MultiCure
 #'
-#' @return CovImp, a matrix with a SINGLE imputation of the covariate matrix
+#' @return CovImp a matrix with a SINGLE imputation of the covariate matrix
 #' @details The example code included in the package imputes missing covariate X2 in the Multistate cure model example. In the example code, a normal covariate is imputed using an approach similar to SMC-FCS in Bartlett et al. (2014) and Metropolis-Hastings methods. In practice, this function can use any imputation method the user desires. For example, the user-written function can call 'mice' in R to perform the imputation. 
 #' @export
 
 
 
-COVIMPUTEFUNCTION = function(datWIDE,param, ImputeDat, TransCov){
+COVIMPUTEFUNCTION_Example = function(datWIDE,param, ImputeDat, TransCov){
 	BASELINE = ifelse(length(param)!=(length(reshape2::melt(TransCov)$value)+1), 'weib', 'cox')
 	CovMissing = ImputeDat[[2]]
 	CovImp = as.data.frame(ImputeDat[[3]])
@@ -56,7 +56,6 @@ COVIMPUTEFUNCTION = function(datWIDE,param, ImputeDat, TransCov){
 	mPropose = function(Y){
 		return(rnorm(n=1, mean = Y, sd = 0.5))
 	}
-
 	current = CovImp[CovMissing[,'X2']==T,'X2']
 	
 	##################################

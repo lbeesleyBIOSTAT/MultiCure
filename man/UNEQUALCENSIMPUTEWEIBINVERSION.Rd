@@ -4,8 +4,8 @@
 \alias{UNEQUALCENSIMPUTEWEIBINVERSION}
 \title{UNEQUALCENSIMPUTEWEIBINVERSION}
 \usage{
-UNEQUALCENSIMPUTEWEIBINVERSION(datWIDE, beta, alpha, scale, shape, ImputeDat,
-  TransCov)
+UNEQUALCENSIMPUTEWEIBINVERSION(datWIDE, beta, alpha, scale, shape,
+  ImputeDat, TransCov)
 }
 \arguments{
 \item{datWIDE}{defined as in MultiCure}

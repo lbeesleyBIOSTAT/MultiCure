@@ -1,55 +1,8 @@
 
-#' ProperDraws_MC
-#' @description The function ProperDraws_MC is used to obtain "proper" imputations of the missing data after the MCEM algorithm is used to fit the multistate cure model. These proper imputations are then used in the functions MultiCure_VAREST_Imputation or MultiCure_VAREST_ImputationBOOT to estimate the parameter standard errors. 
-#'
-#' @param datWIDE A data frame with the following columns: 
-#' \itemize{
-#' \item Y_R, the recurrence event/censoring time
-#' \item delta_R, the recurrence event/censoring indicator
-#'\item Y_D, the death event/censoring time 
-#' \item delta_D, the death event/censoring indicator
-#' \item G, the cure status variable. This takes value 1 for known non-cured, 0 for "known" cured and NA for unknown cure status
-#'}
-#' @param Cov matrix of covariates used in MultiCure (may have missingness)
-#' @param CovImp  A list with IMPNUM elements containing the imputations of Cov output from MultiCure
-#' @param GImp  A matrix with IMPNUM elements containing the imputations of G output from MultiCure
-#' @param YRImp  A matrix with IMPNUM elements containing the imputations of Y_R output from MultiCure
-#' @param deltaRImp  A matrix with IMPNUM elements containing the imputations of delta_R output from MultiCure
-#' @param COVIMPUTEFUNCTION This is a function for creating a single imputed version of the covariate set when covariate imputation is needed. This is user-specified. See COVIMPUTEFUNCTION_Example.R for an example of the input and output structure. 
-#' @param COVIMPUTEINITIALIZE This is a function for initializing the missing values of the covariates. This is user-specified. See COVIMPUTEINITIALIZE_Example.R for an example of the input and output structure. 
-#' @param UNEQUALCENSIMPUTE This is a function for imputing the outcome data in the unequal censoring (follow-up) setting. This only needs to be specified when we have unequal censoring. Several default options exist, but this could also be a user-specified function. Inputs and outputs must match default versions.
-#' @param ASSUME This variables indicates what equality assumptions we are making regarding the 24 and 14 transitions. The possible options are:
-#' \itemize{
-#' \item 'SameHazard': Lambda_14(t) = Lambda_24(t)
-#' \item 'AllSeparate': No restrictions on Lambda_14(t) and Lambda_24(t)
-#' \item  'ProportionalHazard': Lambda_14(t) = Lambda_24(t) exp(Beta0)
-#' \item  'SameBaseHaz': Lambda^0_14(t) = Lambda^0_24(t), No restrictions on beta_14 and beta_24
-#' }
-#' @param TransCov a list with elements: Trans13, Trans24, Trans14, Trans34, PNonCure. Each list element is a vector containing the names of the variables in Cov to be used in the model for the corresponding transition. 13 is NonCured -> Recurrence, 24 is Cured -> Death, 14 is NonCured -> Death, 34 is Recurrence -> Death. PNonCure contains the names of the covariates for the logistic regression for P(NonCure). 
-#' @param BASELINE This variable indicates the assumptions about the baseline hazard form. This can take values 'weib' and 'cox'
-#' @param PENALTY This variable indicates whether we are using any variable selection in the model fitting. Right now, the options are 'None' (no variable selection), 'Ridge' (ridge regression for all covariates in all models) and 'Lasso' (lasso for all covariates in all models, only implemented for Cox baseline hazards)
-#' @param POSTITER This variable indicates the number of post-processing steps should be done. The default is 5.
-#'
-#' @return OUT a matrix containing the following:
-#' \itemize{
-#' \item CovImp  A list with IMPNUM elements containing "proper" imputations of Cov
-#' \item GImp  A list with IMPNUM elements containing "proper" imputations of G
-#' \item YRImp  A list with IMPNUM elements containing "proper" imputations of Y_R
-#' \item deltaRImp  A list with IMPNUM elements containing "proper" imputations of delta_R
-#'}
-#' @details In order to output the imputed data from MultiCure, one must use the trace = TRUE option in MultiCure.
-#'
-#' @examples
-#' attach(SimulateMultiCure(type = "UnequalCensoring"))
-#' Cov = data.frame(X1,X2)
-#' VARS = names(Cov)
-#' TransCov = list(Trans13 = VARS, Trans24 = VARS, Trans14 = VARS, Trans34 = VARS, PNonCure = VARS)
-#' datWIDE = data.frame( Y_R, Y_D, delta_R , delta_D, G)
-#' fit = MultiCure(iternum = 100, datWIDE, Cov, ASSUME = "SameHazard", TransCov = TransCov, BASELINE = "weib", IMPNUM = 10) ### Note: This will take a moment
-#' Proper = ProperDraws_MC(datWIDE,Cov, CovImp = fit[[9]], GImp = fit[[10]], YRImp = fit[[11]], deltaRImp = fit[[12]], ASSUME = "SameHazard", TransCov = TransCov, BASELINE = "weib") ### Note: This will take a moment
+
 #' @export
 
-ProperDraws_MC = function( datWIDE,Cov,CovImp, GImp, YRImp, deltaRImp, COVIMPUTEFUNCTION = NULL,  COVIMPUTEINITIALIZE = NULL,
+ProperDraws = function( datWIDE,Cov,CovImp, GImp, YRImp, deltaRImp, COVIMPUTEFUNCTION = NULL,  COVIMPUTEINITIALIZE = NULL,
 			UNEQUALCENSIMPUTE = NULL, ASSUME = 'SameHazard', TransCov, BASELINE, PENALTY = 'None',POSTITER = 5){
 	
 	##################

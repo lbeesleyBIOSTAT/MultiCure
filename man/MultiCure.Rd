@@ -5,9 +5,9 @@
 \title{MultiCure}
 \usage{
 MultiCure(iternum, datWIDE, Cov, COVIMPUTEFUNCTION = NULL,
-  COVIMPUTEINITIALIZE = NULL, UNEQUALCENSIMPUTE = NULL, trace = TRUE,
+  COVIMPUTEINITIALIZE = NULL, UNEQUALCENSIMPUTE = NULL,
   ASSUME = "SameHazard", TransCov, IMPNUM = NULL, BASELINE = "weib",
-  PENALTY = "None", PARAMINIT = NULL, ImputeDat = NULL)
+  PENALTY = "None", PARAMINIT = NULL)
 }
 \arguments{
 \item{iternum}{number of iterations for the EM or MCEM algorithm}
@@ -21,15 +21,13 @@ MultiCure(iternum, datWIDE, Cov, COVIMPUTEFUNCTION = NULL,
 \item G, the cure status variable. This takes value 1 for known non-cured, 0 for "known" cured and NA for unknown cur`e status
 }}
 
-\item{Cov}{A data frame containing the covariates used in the model fit. The columns must be named. Factors must be represented as dummy variables.}
+\item{Cov}{A data frame containing the covariates used in the model fit. The columns must be named. Factors must be represented as dummy variables. If ridge or lasso penalties are being used, the covariates should be rescaled to have unit variances.}
 
 \item{COVIMPUTEFUNCTION}{This is a function for creating a single imputed version of the covariate set when covariate imputation is needed. This is user-specified. See COVIMPUTEFUNCTION_Example.R for an example of the input and output structure.}
 
 \item{COVIMPUTEINITIALIZE}{This is a function for initializing the missing values of the covariates. This is user-specified. See COVIMPUTEINITIALIZE_Example.R for an example of the input and output structure.}
 
 \item{UNEQUALCENSIMPUTE}{This is a function for imputing the outcome data in the unequal censoring (follow-up) setting. This only needs to be specified when we have unequal censoring. Several default options are included in this package, but this could also be a user-specified function. Inputs and outputs must match default versions.}
-
-\item{trace}{This variable indicates whether the parameter estimates at each iteration are to be saved and, if imputation is needed, whether the imputed datasets are output}
 
 \item{ASSUME}{This variables indicates what equality assumptions we are making regarding the 24 and 14 transitions. The possible options are:
 \itemize{
@@ -45,11 +43,9 @@ MultiCure(iternum, datWIDE, Cov, COVIMPUTEFUNCTION = NULL,
 
 \item{BASELINE}{This variable indicates the assumptions about the baseline hazard form. This can take values 'weib' and 'cox'}
 
-\item{PENALTY}{This variable indicates whether we are using any variable selection in the model fitting. The current code has been implemented and tested for option 'None' (no variable selection). Additional options include 'Ridge' (ridge regression for all covariates in all models) and 'Lasso' (lasso for all covariates in all models, only implemented for Cox baseline hazards), but these two options have not been rigorously tested.}
+\item{PENALTY}{This variable indicates whether we are using any variable selection in the model fitting. The current code has been implemented and tested for option 'None' (no variable selection). Additional options include 'Ridge' (ridge regression for all covariates in all models) and 'Lasso' (lasso for all covariates in all models, only implemented for Cox baseline hazards), but these two additional options have not been rigorously tested.}
 
 \item{PARAMINIT}{If desired, this can be a vector with initializations for the model parameters. The ordering of these parameters is c(beta, alpha, scale, shape) using the same ordering as in the output}
-
-\item{ImputeDat}{This argument is used in variance estimation for the MCEM algorithm. It provides an initialization for the imputed data. This argument can be ignored during routine EM and MCEM model fits.}
 }
 \value{
 fit If BASELINE = 'weib', this is a list containing
@@ -58,17 +54,17 @@ fit If BASELINE = 'weib', this is a list containing
 \item alpha estimate at final iteration.
 \item scale estimate at final iteration. The ordering is: Transition 1->3, 2->4, 1->4, 3->4 
 \item shape estimate at final iteration. The ordering is: Transition 1->3, 2->4, 1->4, 3->4
-\item If trace = T, fit will also contain estimates of beta, alpha, scale, and shape from each iteration and, if imputation is performed, the imputed values of Cov, G, Y_R, and delta_R from the last iteration. If imputation is not performed, includes the most recent weight p.
+\item fit will also contain estimates of beta, alpha, scale, and shape from each iteration and, if imputation is performed, the imputed values of Cov, G, Y_R, and delta_R from the last iteration. If imputation is not performed, includes the most recent weight p.
 }
 If BASELINE = 'cox', this is a list containing 
 \itemize{
 \item beta estimate at final iteration. The ordering is: Beta for Transition 1->3, Beta for Transition 2->4, Beta for Transition 1->4, Beta_0 if BASELINE equals 'ProportionalHazard', Beta for Transition 3->4
 \item alpha estimate at final iterations. 
-\item If trace = T, fit will also contain estimates of beta and alpha from each iteration and, if imputation is performed, the imputed values of Cov, G, Y_R, and delta_R from the last iteration. If imputation is not performed, includes the most recent weight p.
+\item fit will also contain estimates of beta and alpha from each iteration and, if imputation is performed, the imputed values of Cov, G, Y_R, and delta_R from the last iteration. If imputation is not performed, includes the most recent weight p.
 }
 }
 \description{
-This function fits a Multistate Cure model using Expectation-Maximization (EM) and Monte Carlo Expectation-Maximization (MCEM) algorithms. This function will obtain the maximum likelihood estimate of the model parameter, but it will not estimate standard errors.
+This function fits a Multistate Cure model using Expectation-Maximization (EM) and Monte Carlo Expectation-Maximization (MCEM) algorithms as in Beesley et al. (2018) in Biostatistics.
 }
 \details{
 In order to fit a model with no covariates for one or more of the transitions or the logistic regression, include an all-zero covariate in Cov and list that covariate for the corresponding transition/s in TransCov. 

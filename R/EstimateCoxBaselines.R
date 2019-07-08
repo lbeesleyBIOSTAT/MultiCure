@@ -336,18 +336,3 @@ Baseline_Hazard = function(TIME, Basehaz){
 }
 
 
-
-#' @export
-
-Baseline_Hazard_Slow = function(TIME,Basehaz){
-	TIME_LOWER = Basehaz[,1]
-	TIME_UPPER = Basehaz[,2]
-	TIME_LOWER = c(TIME_LOWER,Basehaz[length(Basehaz[,2]),2])
-	TIME_UPPER = c(TIME_UPPER,10^6)
-	HAZARD = c(Basehaz[,3],0)
-	#data.frame(TIME_LOWER, TIME_UPPER, HAZARD)
-	j = c(1:length(TIME_LOWER)) #which interval are we in
-	Li = j[TIME_LOWER <= TIME & TIME_UPPER > TIME] #interval is closed on the left and open on the right
-	Hazard  = sum(  (HAZARD*(TIME_UPPER-TIME_LOWER))[which(j <= (Li-1))]) + (HAZARD*(TIME-TIME_LOWER))[which(j==Li)]
-	return(Hazard)
-}
